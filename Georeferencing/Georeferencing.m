@@ -1,5 +1,5 @@
 %% Georeferencing - Lever Arm Estimation
-% Author: Johannes Ernst, Tim Kayser
+% Author: SIMP Team
 clearvars
 close all
 format longG
@@ -19,13 +19,19 @@ GNSS = [GNSS(:,1), GNSS(:,2), [Zcoord1;Zcoord2;Zcoord3;Zcoord4;0;0;0]];
 GNSS = [GNSS, linspace(60,360,length(GNSS))'];   % create time stamps
 
 % Create Scanner trajectory
-params = [0; 0; pi/4; 10; 10; 0.6];     % simulate rotation and offset
-Scan = Trafo6(GNSS(:,1:3),params);
-Scan = Scan(1:3:end,:);                 % subsample Scan trajectory
+params = [1.2; 1.3; 1; 0; 0; pi/4; 10; 10; 0.6]; 	% simulate rotation and offset
+Scan = Trafo9(GNSS(:,1:3),params);
+Scan = Scan(1:3:end,:);                             % subsample Scan trajectory
 Scan(:,1) = Scan(:,1)+rand(length(Scan),1)*0.02;    % create noise
 Scan(:,2) = Scan(:,2)+rand(length(Scan),1)*0.02;
 Scan(:,3) = Scan(:,3)+rand(length(Scan),1)*0.002;
-Scan = [Scan, linspace(0,300,length(Scan))'];   % create time stamps
+% Scan(70:120,1) = Scan(70:120,1)+linspace(0,-0.3,51)';    % create more noise
+% Scan(400:460,1) = Scan(400:460,1)+linspace(0,0.3,61)';
+% Scan(220:270,1) = Scan(220:270,1)+linspace(0,-0.3,51)';
+% Scan(100:170,2) = Scan(100:170,2)+linspace(0,-0.3,71)';
+% Scan(450:550,2) = Scan(450:550,2)+linspace(0,0.15,101)';
+% Scan(200:220,2) = Scan(200:220,2)+linspace(0,0.4,21)';
+Scan = [Scan, linspace(0,300,length(Scan))'];       % create time stamps
 ScanBackup = Scan;
 
 % % Second trajectories
@@ -98,8 +104,8 @@ aziScan = mod(atan2(Scan(idxScan,2)-Scan(1,2),Scan(idxScan,1)-Scan(1,1)),2*pi);
 zRot = aziScan-aziGNSS;
 
 % Rotate scanner trajectory
-trafoCoarse = [0 0 -zRot 0 0 0]';
-Scan(:,1:3) = Trafo6(Scan(:,1:3),trafoCoarse);
+trafoCoarse = [1 1 1 0 0 -zRot 0 0 0]';
+Scan(:,1:3) = Trafo9(Scan(:,1:3),trafoCoarse);
 
 % Plot trajectories
 pause(step)
@@ -113,12 +119,17 @@ scatter3(Scan(idxScan,1),Scan(idxScan,2),Scan(idxScan,3),'r','filled');
 
 %% Accurate trajectory match
 % Combined transformation (coarse and accurate)
-trafoAcc = trafoCoarse;
+rotScale = [trafoCoarse(1) 0 0; 0 trafoCoarse(2) 0; 0 0 trafoCoarse(3)]*...
+           [cos(trafoCoarse(6)) -sin(trafoCoarse(6)) 0; sin(trafoCoarse(6)) cos(trafoCoarse(6)) 0; 0 0 1]*...
+           [cos(trafoCoarse(5)) 0 sin(trafoCoarse(5)); 0 1 0; -sin(trafoCoarse(5)) 0 cos(trafoCoarse(5))]*...
+           [1 0 0; 0 cos(trafoCoarse(4)) -sin(trafoCoarse(4)); 0 sin(trafoCoarse(4)) cos(trafoCoarse(4))];
+translation = [0 0 0]' + rotScale*initOffset';
 
 % Find iterative closest points
-for t = 1:5 
+for t = 1:7 
     % Find closest point in GNSS trajectory for each point in scan trajectory
     for i = 1:length(Scan)
+        
         % Get approximate GNSS index
         idx = round((Scan(i,4)-timeOffset)/GNSSTSS)+1;
 
@@ -135,20 +146,34 @@ for t = 1:5
             idxUB = idx+5;
         end
 
-        % Find closest GNSS point in threshold
-        max(sqrt((GNSS(:,1)-GNSS(1,1)).^2+(GNSS(:,2)-GNSS(1,2)).^2+(GNSS(:,3)-GNSS(1,3)).^2));
+        % Find closest GNSS point in threshold and save index and distance
         [~, matchIDX] = min(vecnorm(GNSS(idxLB:idxUB,1:3)-Scan(i,1:3),2,2));
-        match(i,:) = [i, idxLB + matchIDX - 1]; % [ScanIDX, GNSSIDX]
+        dist = norm(GNSS(idxLB + matchIDX - 1,1:3)-Scan(i));
+        match(i,:) = [i, idxLB + matchIDX - 1, dist];   % order: [ScanIDX, GNSSIDX, distance]
     end
+    
+    % Delete 5% of the worst matches (biggest difference)
+    [~, sortIDX] = sort(match(:,3));        % sort by distance
+    delElem = round(0.05*length(match));    % determine number of elements to be deleted
+    sortIDX = sortIDX(1:end-delElem);       % delete elements
+    scanIDX = sort(sortIDX);                % remaining scan indices
 
     % Estimate transformation
-    trafoParam = Est6Trafo3D(Scan(match(:,1),1:3),GNSS(match(:,2),1:3),[0 0 0 0 0 0]',1e-10);
+    trafoParam = Est9Trafo3D(Scan(match(scanIDX,1),1:3),GNSS(match(scanIDX,2),1:3),[1 1 1 0 0 0 0 0 0]',1e-1^t);
+    
+    % Delete bad Scan points
+    Scan = Scan(scanIDX,:);
 
     % Rotate scanner trajectory
-    Scan(:,1:3) = Trafo6(Scan(:,1:3),trafoParam);
+    Scan(:,1:3) = Trafo9(Scan(:,1:3),trafoParam);
     
-    % Combine coarse and accurate transformation
-    trafoAcc = trafoAcc + trafoParam;
+    % Update complete transformation
+    rotScaleNew = [trafoParam(1) 0 0; 0 trafoParam(2) 0; 0 0 trafoParam(3)]*...
+                  [cos(trafoParam(6)) -sin(trafoParam(6)) 0; sin(trafoParam(6)) cos(trafoParam(6)) 0; 0 0 1]*...
+                  [cos(trafoParam(5)) 0 sin(trafoParam(5)); 0 1 0; -sin(trafoParam(5)) 0 cos(trafoParam(5))]*...
+                  [1 0 0; 0 cos(trafoParam(4)) -sin(trafoParam(4)); 0 sin(trafoParam(4)) cos(trafoParam(4))];          
+    translation = trafoParam(7:9) + rotScaleNew*translation;
+    rotScale = rotScaleNew*rotScale;
 
     % Plot trajectories
     pause(step)
@@ -157,23 +182,30 @@ for t = 1:5
     hold on
     grid on
     plot3(Scan(:,1),Scan(:,2),Scan(:,3),'k')
+%     name = "i" + num2str(t) + ".png";
+%     print('-dpng','-r200',name)
+    
+    % Reset match
+    match = [];
 end
 
 %% Test transformation on original trajectory
-% Add initial offset to transformation/trajectory
-% trafoAcc(4:6) = trafoAcc(4:6) + Trafo6(initOffset,trafoAcc)';
-ScanBackup(:,1:3) = ScanBackup(:,1:3) + initOffset;
-
-% Plot trajectories
+% Plot original trajectories
 figure
 plot3(GNSS(:,1),GNSS(:,2),GNSS(:,3))
 hold on
 grid on
 plot3(ScanBackup(:,1),ScanBackup(:,2),ScanBackup(:,3),'k')
 pause(step)
-ScanBackup = Trafo6(ScanBackup(:,1:3),trafoAcc);
+print('-dpng','-r200',"BeforeTrafo.png")
+
+% Transform trajectory and plot anew
+for i = 1:length(ScanBackup)
+   ScanBackup(i,1:3) = rotScale * ScanBackup(i,1:3)' + translation;
+end
 hold off
 plot3(GNSS(:,1),GNSS(:,2),GNSS(:,3))
 hold on
 grid on
 plot3(ScanBackup(:,1),ScanBackup(:,2),ScanBackup(:,3),'k')
+print('-dpng','-r200',"AfterTrafo.png")
