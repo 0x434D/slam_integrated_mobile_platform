@@ -6,9 +6,10 @@
 % ----------------------------------------------------------------------------
 % Authors:     SIMP-Project Team
 % ----------------------------------------------------------------------------
-% Last Modified:   13.11.2021
+% Last Modified:   05.12.2021
 
 function [traj_GNSS] = simulateGNSS(traj_scan, leverArm)
+
 
 % Check data type to match output to input trajectory
 if istable(traj_scan)
@@ -22,17 +23,25 @@ elseif ismatrix(traj_scan)
 else
     error("Unknown input trajectory data type (only matrix or table allowed)")
 end
-    
+
+% Check lever arm input
+
+if size(leverArm,1) == 3
+elseif size(leverArm,2) == 3
+    leverArm = leverArm';
+else
+    error("Invalid lever arm input. Please give a 1x3 or 3x1 numeric array");
+end
 
 for i=1:size(traj_scan,1)
     switch dat_type
         case 'mat'
             rotMat = quat2rotm(traj_scan(i,5:8));
             leverArm_i = rotMat * leverArm;
-            traj_GNSS(i,2:4) = traj_scan(i,2:4) + leverArm_i;
+            traj_GNSS(i,2:4) = traj_scan(i,2:4) + leverArm_i';
         case 'table'
             rotMat = quat2rotm(traj_scan{i,5:8});
             leverArm_i = rotMat * leverArm;
-            traj_GNSS{i,2:4} = traj_scan{i,2:4} + leverArm_i;
+            traj_GNSS{i,2:4} = traj_scan{i,2:4} + leverArm_i';
     end
 end

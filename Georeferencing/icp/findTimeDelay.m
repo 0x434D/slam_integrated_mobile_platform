@@ -3,29 +3,31 @@
 % https://de.mathworks.com/matlabcentral/answers/746102-3d-cross-correlation
 
 % ----------------------------------------------------------------------------
-% Input:       traj_traj   -   trajner Trajectory with Orientation (variable type table or matrix)
-%              leverArm    -   Lever Arm between sanner and GNSS Antenna in scanner Coordinate System (1x3 or 3x1 matrix) 
-% Output:      traj_GNSS   -   GNSS Antenna Trajectory in trajner Coordinate System (output variable typ matching traj_input type)
+% Input:        traj_scan       -   Scanner Trajectory as numeric array
+%               traj_gnss       -   GNSS Trajectory as numeric array
+%               stepSize        -   Step Size for Interpolation in seconds 
+% Output:       timeOffset      -   Time Offset between Scan and GNSS Trajectory
+%               timeOffsetInv   -   Time Offset of Inverse Trajectories (end-to-end offset)
 % ----------------------------------------------------------------------------
 % Authors:     SIMP-Project Team
 % ----------------------------------------------------------------------------
-% Last Modified:   13.11.2021
+% Last Modified:   05.12.2021
 
-function [timeOffset,timeOffsetInv] = findTimeDelay(traj_scan, traj_gnss, samp_freq)
+function [timeOffset,timeOffsetInv] = findTimeDelay(traj_scan, traj_gnss, stepSize)
 
 traj_gnss(:,4) = traj_gnss(:,4) * 1e-6;    % time from mikroseconds to seconds
 
-% Reduce coordinates by center of gravity
-traj_gnssRed = traj_gnss(:,1:3) - traj_gnss(1,1:3);
-traj_scanRed = traj_scan(:,2:4) - traj_scan(1,2:4);
+% Reduce coordinates by first point coordinates %center of gravity
+traj_gnssRed = traj_gnss(:,1:3) - traj_gnss(1,1:3);  % mean(traj_gnss(:,1:3));
+traj_scanRed = traj_scan(:,2:4) - traj_scan(1,2:4);  % mean(traj_scan(:,2:4));
 
 % calculate norm for each position
 norm_gnss = vecnorm(traj_gnssRed,2,2);
 norm_scan = vecnorm(traj_scanRed,2,2);
 
 % interpolate to have equal amount of steps per time unit
-norm_gnssInt = interp1(traj_gnss(:,4),norm_gnss,traj_gnss(1,4):samp_freq:traj_gnss(end,4))';
-norm_scanInt = interp1(traj_scan(:,1),norm_scan,traj_scan(1,1):samp_freq:traj_scan(end,1))';
+norm_gnssInt = interp1(traj_gnss(:,4),norm_gnss,traj_gnss(1,4):stepSize:traj_gnss(end,4))';
+norm_scanInt = interp1(traj_scan(:,1),norm_scan,traj_scan(1,1):stepSize:traj_scan(end,1))';
 
 % find delay both ways
 timeOffset = finddelay(norm_scanInt,norm_gnssInt);
@@ -37,6 +39,13 @@ scatter(traj_gnssRed(:,1),traj_gnssRed(:,2));
 hold on
 scatter(traj_scanRed(:,1),traj_scanRed(:,2));
 legend('GNSS','Scanner');
+
+figure;
+plot(traj_gnss(:,4)-traj_gnss(1,4),norm_gnss);
+hold on
+plot(traj_scan(:,1)-traj_scan(1,1),norm_scan);
+legend('GNSS','Scanner');
+
 figure;
 plot(norm_gnssInt);
 hold on
@@ -62,5 +71,8 @@ elseif timeOffset
     plot(norm_scanInt);
 end
 legend('GNSS','Scanner');
+
+timeOffset = timeOffset * stepSize;
+timeOffsetInv = timeOffsetInv * stepSize;
 
 end
