@@ -47,12 +47,16 @@ GNSS(:,2:4) = GNSS(:,2:4)-offset;
 %% Coarse trajectory match
 [Scan,rotScale,translation] = coarseMatch(GNSS, Scan, timeOffset);
 
-% % Plot trajectories
-% figure
-% plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
-% hold on
-% grid on
-% plot3(Scan(:,2),Scan(:,3),Scan(:,4),'k')
+% Plot trajectories
+figure
+plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
+hold on
+view([60 55])
+grid on
+plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
+% Scan(:,2:4) = Trafo9(Scan(:,2:4),[1 1 1 -0.20 0 0 0 0 0]');    % rotate around y
+% plot3(Scan(:,2),Scan(:,3),Scan(:,4),'r')
+
 
 %% Accurate trajectory match
 [Scan,rotScale,translation] = accurateMatch(GNSS, Scan, timeOffset, rotScale, translation, 7);
@@ -72,8 +76,18 @@ for i = 1:length(ScanBackup)
    ScanBackup(i,2:4) = rotScale * ScanBackup(i,2:4)' + translation;
 end
 plot3(ScanBackup(:,2),ScanBackup(:,3),ScanBackup(:,4),'k')
+title('Combined Transformation')
 % print('-dpng','-r200',"AfterTrafo.png")
 
-% TODO: Transformationskombination stimmt noch nicht ganz...
-%       Ist die Schätzung wirklich gut? Sieht so aus als sollte man noch
+% TODO: - Transformationskombination stimmt noch nicht ganz
+%           - Sollte jetz passen. Allerdings muss die Groborientierung noch
+%           etwas besser werden oder die Initialwerte bei der Ausgleichung
+%           da die erste Iteration sonst nicht konvergiert:
+%                   - AUch noch irgendwie x Rotation in coarseMatch
+%                   schätzen
+%                   - Irgendwie mit try() catch() mehrere Anfangswinkel für
+%                   x Rot in accurate Match benutzen
+%       - Ist die Schätzung wirklich gut? Sieht so aus als sollte man noch
 %       etws rotieren können für den besten match
+%       - Gewichtsmatrix
+%       - Scan mehr Punkte oder GNSS meh Punkte unabhängig

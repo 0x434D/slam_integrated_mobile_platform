@@ -60,7 +60,7 @@ for t = 1:iter
     match = match(scanIDX,:);               % update match list
     
     % Subsample match list
-    match = match(1:10:end,:);
+    match = match(1:5:end,:);
     
     % Estimate transformation
     trafoParam = Est9Trafo3D(Scan(match(:,2),2:4),GNSS(match(:,1),2:4),[1 1 1 0 0 0 0 0 0]',1e-1^t);
