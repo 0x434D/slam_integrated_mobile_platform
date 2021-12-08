@@ -15,8 +15,6 @@
 
 function [timeOffset,timeOffsetInv] = findTimeDelay(traj_scan, traj_gnss, stepSize)
 
-traj_gnss(:,4) = traj_gnss(:,4) * 1e-6;    % time from mikroseconds to seconds
-
 % Reduce coordinates by first point coordinates %center of gravity
 traj_gnssRed = traj_gnss(:,1:3) - traj_gnss(1,1:3);  % mean(traj_gnss(:,1:3));
 traj_scanRed = traj_scan(:,2:4) - traj_scan(1,2:4);  % mean(traj_scan(:,2:4));
@@ -34,43 +32,43 @@ timeOffset = finddelay(norm_scanInt,norm_gnssInt);
 timeOffsetInv = finddelay(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
 
 % scale 
-% figure;
-% scatter(traj_gnssRed(:,1),traj_gnssRed(:,2));
-% hold on
-% scatter(traj_scanRed(:,1),traj_scanRed(:,2));
-% legend('GNSS','Scanner');
+figure;
+scatter(traj_gnssRed(:,1),traj_gnssRed(:,2));
+hold on
+scatter(traj_scanRed(:,1),traj_scanRed(:,2));
+legend('GNSS','Scanner');
 
-% figure;
-% plot(traj_gnss(:,4)-traj_gnss(1,4),norm_gnss);
-% hold on
-% plot(traj_scan(:,1)-traj_scan(1,1),norm_scan);
-% legend('GNSS','Scanner');
-% 
-% figure;
-% plot(norm_gnssInt);
-% hold on
-% plot(norm_scanInt);
-% legend('GNSS','Scanner');
+figure;
+plot(traj_gnss(:,4)-traj_gnss(1,4),norm_gnss);
+hold on
+plot(traj_scan(:,1)-traj_scan(1,1),norm_scan);
+legend('GNSS','Scanner');
 
-% figure;
-% [c,lags] = xcorr(norm_scanInt,norm_gnssInt);
-% stem(lags,c)
-% 
-% figure;
-% [c,lags] = xcorr(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
-% stem(lags,c)
+figure;
+plot(norm_gnssInt);
+hold on
+plot(norm_scanInt);
+legend('GNSS','Scanner');
 
-% figure;
-% if timeOffset<=0
-%     plot(norm_gnssInt);
-%     hold on
-%     plot(norm_scanInt(1+abs(timeOffset):end));
-% elseif timeOffset
-%     plot(norm_gnssInt(1+abs(timeOffset):end));
-%     hold on
-%     plot(norm_scanInt);
-% end
-% legend('GNSS','Scanner');
+figure;
+[c,lags] = xcorr(norm_scanInt,norm_gnssInt);
+stem(lags,c)
+
+figure;
+[c,lags] = xcorr(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
+stem(lags,c)
+
+figure;
+if timeOffset<=0
+    plot(norm_gnssInt);
+    hold on
+    plot(norm_scanInt(1+abs(timeOffset):end));
+elseif timeOffset
+    plot(norm_gnssInt(1+abs(timeOffset):end));
+    hold on
+    plot(norm_scanInt);
+end
+legend('GNSS','Scanner');
 
 timeOffset = timeOffset * stepSize;
 timeOffsetInv = timeOffsetInv * stepSize;
