@@ -50,10 +50,10 @@ GNSSTSS = mean(diff(GNSS(:,1)));
 timeOffset = GNSS(1,1)-Scan(1,1);
 Scan(:,1) = Scan(:,1)+timeOffset;
 
-% Reduce coordinates for numric stability
-offset = mean(GNSS(:,2:4));
-GNSS(:,2:4) = GNSS(:,2:4)-offset;
-% Scan(:,2:4) = Scan(:,2:4)-offset;
+% % Reduce coordinates for numeric stability (relevant for ECEF)
+% offset = mean(GNSS(:,2:4));
+% GNSS(:,2:4) = GNSS(:,2:4)-offset;
+% % Scan(:,2:4) = Scan(:,2:4)-offset;
 
 %% Coarse trajectory match
 [Scan,rotScale,translation] = coarseMatch(GNSS, Scan, timeOffset);
@@ -73,9 +73,9 @@ view([90 90])
 %% Accurate trajectory match
 [Scan,rotScale,translation] = accurateMatch(GNSS, Scan, timeOffset, rotScale, translation, 7, 200, 1, 0);
 
-% Add initial offset
-translation = translation + offset';
-GNSS(:,2:4) = GNSS(:,2:4) + offset;
+% % Add initial offset (relevant for ECEF)
+% translation = translation + offset';
+% GNSS(:,2:4) = GNSS(:,2:4) + offset;
 
 %% Test transformation on original trajectory
 % Transform trajectory and plot anew
@@ -93,6 +93,54 @@ title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
 % print('-dpng','-r200',"AccurateTrafo_Ugly.png")
 
+%% Estimate accuracy
+bound = 200;
+for i = 1:length(GNSS)
+    % Get approximate Scan index
+    idx = round((GNSS(i,1)-timeOffset)/ScanTSS)+1;
+    if idx > length(Scan)
+        idx = length(Scan);
+    end
+
+    % Estimate lower and upper bound for threshold
+    if idx-round(bound/2) < 1
+        idxLB = 1;
+    else
+        idxLB = idx-round(bound/2);
+    end
+
+    if idx+round(bound/2) > length(Scan)
+        idxUB = length(Scan);
+    else
+        idxUB = idx+round(bound/2);
+    end
+
+    % Find closest Scan point in threshold and save index and distance
+    [~, matchIDX] = min(vecnorm(Scan(idxLB:idxUB,2:4)-GNSS(i,2:4),2,2));
+    dist = norm(Scan(idxLB + matchIDX - 1,2:4)-GNSS(i,2:4));
+    distxy = norm(Scan(idxLB + matchIDX - 1,2:3)-GNSS(i,2:3));
+    distx = norm(Scan(idxLB + matchIDX - 1,2)-GNSS(i,2));
+    disty = norm(Scan(idxLB + matchIDX - 1,3)-GNSS(i,3));
+    distz = norm(Scan(idxLB + matchIDX - 1,4)-GNSS(i,4));
+    % order: [GNSSIDX, ScanIDX, distance, distance in XY, distance in x,y,z]
+    match(i,:) = [i, idxLB + matchIDX - 1, dist, distxy, distx, disty, distz];
+end
+stdev = norm(match(:,3))/sqrt(length(match));         % standard deviation 
+stdevxy = norm(match(:,4))/sqrt(length(match));       % standard deviation x,y
+meandiff = sum(match(:,3))/length(match);             % mean point match distance
+meandiffxy = sum(match(:,4))/length(match);           % mean point match distance x,y
+[stdx, stdy, stdz] = deal(norm(match(:,5))/sqrt(length(match)), norm(match(:,6))/sqrt(length(match)), norm(match(:,7))/sqrt(length(match)));
+[meanx, meany, meanz] = deal(sum(match(:,5))/length(match), sum(match(:,6))/length(match), sum(match(:,7))/length(match));
+fprintf('\n3D Accuracy (X, Y, Z):\n')
+fprintf('Mean point match distance: %.3f m\n',meandiff)
+fprintf('Standard deviation: %.3f m\n',stdev)
+fprintf('\n2D Accuracy (X, Y):\n')
+fprintf('Mean point match distance: %.3f m\n',meandiffxy)
+fprintf('Standard deviation: %.3f m\n',stdevxy)
+fprintf('\nAccuracy in X, Y, Z:\n')
+fprintf('Mean point match distance (X,Y,Z): [%.3f %.3f %.3f] m\n',meanx,meany,meanz)
+fprintf('Standard deviation (X,Y,Z): [%.3f %.3f %.3f] m\n',stdx,stdy,stdz)
+
 % TODO: 
 %       - irgendwie winkelbild noch benutzen?
 %       - Gewichtsmatrix --> Irgendwann später
@@ -101,3 +149,4 @@ view([90 90])
 %         matchbar --> Am Ende dann flat2lla und lla2ecef (etwas umständlich aber naja)
 %       - Z-Koordinate ist Hauptproblem, wie erwartbar --> Vll runter gewichten
 %         in P matrix?
+%       - WIeso Z so gut?
