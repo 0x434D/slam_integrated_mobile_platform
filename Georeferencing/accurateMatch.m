@@ -1,29 +1,34 @@
-function [Scan,rotS,trans] = accurateMatch(GNSS, Scan, tOff, rotS, trans, iter)
+function [Scan,rotS,trans] = accurateMatch(GNSS, Scan, tOff, rotS, trans, iter, bound, sub, del)
 % Function performs an accurate trajectory match for the provided GNSS and
 % Scan trajectory and returns the transformed trajectory as well as the
 % transformation parameters
 % -------------------------------------------------------------------------
 % Autor: SIMP-Project Team
 % -------------------------------------------------------------------------
-% Trajectories have to have matched times!
+% Trajectories have to have matched times! The matching is performed
+% iteratively to get the best solution.
 % -------------------------------------------------------------------------
 % Input:    GNSS    = GNSS trajectory [time [s], X [m], Y [m], Z [m]]
 %           Scan    = Scan trajectory [time [s], X [m], Y [m], Z [m] ...]
 %           tOff    = Time offset between GNSS and Scan trajectory [s]
-%           iter    = number of iterations for ICP
+%           rotS    = Prior rotation and scale of the scan trajectory to 
+%                     concatenate the final rotation and scale
+%           trans   = Prior offset of the Scan trajectory to concatenate
+%                     the final offset
+%           iter    = Number of iterations for ICP
+%           bound   = Size of threshold to check for closest points
+%           sub     = Subsampling ratio (2 equals to every second point...)
+%           del     = percentage of worst points to delete each iteration
 % Output:   Scan    = Scan trajectory [time [s], X [m], Y [m], Z [m] ...]
-%           rotS    = combined rotation and scale of coarse transformation
-%           trans   = translation of coarse transformation [m]
+%           rotS    = Combined rotation and scale of coarse transformation
+%           trans   = Translation of coarse transformation [m]
 % -------------------------------------------------------------------------
-
-figure
 
 % Get mean time step size
 ScanTSS = mean(diff(Scan(:,1)));
 
 % Find iterative closest points
 match = zeros(size(GNSS,1),3);
-bound = 50;  % size of threshold to check for closest points
 for t = 1:iter 
     % Find closest Scan point for each point in GNSS trajectory
     for i = 1:length(GNSS)
@@ -52,15 +57,15 @@ for t = 1:iter
         match(i,:) = [i, idxLB + matchIDX - 1, dist];   % order: [GNSSIDX, ScanIDX, distance]
     end
     
-    % Delete 5% of the worst matches (biggest difference)
+    % Delete the worst del [%] matches (biggest difference)
     [~, sortIDX] = sort(match(:,3));        % sort by distance
-    delElem = round(0.05*length(match));    % determine number of elements to be deleted
+    delElem = round(del/100*length(match)); % determine number of elements to be deleted
     sortIDX = sortIDX(1:end-delElem);       % delete elements
     scanIDX = sort(sortIDX);                % remaining GNSS indices
     match = match(scanIDX,:);               % update match list
     
     % Subsample match list
-    match = match(1:5:end,:);
+    match = match(1:sub:end,:);
     
     % Estimate transformation
     trafoParam = Est9Trafo3D(Scan(match(:,2),2:4),GNSS(match(:,1),2:4),[1 1 1 0 0 0 0 0 0]',1e-1^t);
@@ -82,14 +87,13 @@ for t = 1:iter
     % Plot trajectories
     pause(0.1)
     hold off
-    plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
+    plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4),'b')
     hold on
     view([60 55])
     grid on
-    plot3(Scan(:,2),Scan(:,3),Scan(:,4),'k')
+    plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
     
     % Reset match
     match = [];
 end
 end
-

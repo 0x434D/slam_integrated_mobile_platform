@@ -5,7 +5,10 @@ function [Scan,rotS,trans] = coarseMatch(GNSS, Scan, tOff)
 % -------------------------------------------------------------------------
 % Autor: SIMP-Project Team
 % -------------------------------------------------------------------------
-% Trajectories have to have matched times!
+% Trajectories have to have matched times! The coarse matching is performed
+% by estimating the azimuth difference between the furthest point from the
+% start in both trajectories and calculating the offset between the start
+% points of both routes.
 % -------------------------------------------------------------------------
 % Input:    GNSS    = GNSS trajectory [time [s], X [m], Y [m], Z [m]]
 %           Scan    = Scan trajectory [time [s], X [m], Y [m], Z [m] ...]
@@ -25,23 +28,13 @@ ScanTSS = mean(diff(Scan(:,1)));
 % [~,idxScan] = max(vecnorm((Scan(:,1:3)-Scan(1,1:3)),2,2));
 idxScan = round((GNSS(idxGNSS,1)-tOff)/ScanTSS);
 
-% Plot trajectories
-figure
-plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
-hold on
-view([60 55])
-grid on
-plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
-scatter3(Scan(idxScan,2),Scan(idxScan,3),Scan(idxScan,4),'r','filled')
-scatter3(GNSS(idxGNSS,2),GNSS(idxGNSS,3),GNSS(idxGNSS,4),'r','filled')
-
 % Estimate azimuth of both trajectories with first and furthest point
 aziGNSS = mod(atan2(GNSS(idxGNSS,3)-GNSS(1,3),GNSS(idxGNSS,2)-GNSS(1,2)),2*pi);
 aziScan = mod(atan2(Scan(idxScan,3)-Scan(1,3),Scan(idxScan,2)-Scan(1,2)),2*pi);
 
-% Estimate y-rotation with furthest point (because ECEF is tilted)
-yrotGNSS = mod(atan2(GNSS(idxGNSS,4)-GNSS(1,4),GNSS(idxGNSS,2)-GNSS(1,2)),2*pi);
-yrotScan = mod(atan2(Scan(idxScan,4)-Scan(1,4),Scan(idxScan,2)-Scan(1,2)),2*pi);
+% % Estimate y-rotation with furthest point (because ECEF is tilted)
+% yrotGNSS = mod(atan2(GNSS(idxGNSS,4)-GNSS(1,4),GNSS(idxGNSS,2)-GNSS(1,2)),2*pi);
+% yrotScan = mod(atan2(Scan(idxScan,4)-Scan(1,4),Scan(idxScan,2)-Scan(1,2)),2*pi);
 
 % % % Estimate x-rotation with furthest point (might be added later)
 % xrotGNSS = mod(atan2(GNSS(idxGNSS,4)-GNSS(1,4),GNSS(idxGNSS,3)-GNSS(1,3)),2*pi);
@@ -49,74 +42,29 @@ yrotScan = mod(atan2(Scan(idxScan,4)-Scan(1,4),Scan(idxScan,2)-Scan(1,2)),2*pi);
 
 % Estimate rough z-axis rotation between trajectories
 zRot = aziScan-aziGNSS;
-yRot = yrotScan-yrotGNSS;
+% yRot = yrotScan-yrotGNSS;
 % xRot = xrotScan-xrotGNSS;
 
 % Rotate scanner trajectory
 trafoCoarse = [1 1 1 0 0 -zRot 0 0 0]';
-trafoECEF = [1 1 1 0 yRot 0 0 0 0]';
+% trafoECEF = [1 1 1 0 yRot 0 0 0 0]';
 % trafoECEF2 = [1 1 1 xRot 0 0 0 0 0]';
 Scan(:,2:4) = Trafo9(Scan(:,2:4),trafoCoarse);  % rotate around z
-
-% Plot trajectories
-figure
-plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
-hold on
-view([60 55])
-grid on
-plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
-scatter3(Scan(idxScan,2),Scan(idxScan,3),Scan(idxScan,4),'r','filled')
-scatter3(GNSS(idxGNSS,2),GNSS(idxGNSS,3),GNSS(idxGNSS,4),'r','filled')
-
-Scan(:,2:4) = Trafo9(Scan(:,2:4),trafoECEF);    % rotate around y
-
-% Plot trajectories
-figure
-plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
-hold on
-view([60 55])
-grid on
-plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
-scatter3(Scan(idxScan,2),Scan(idxScan,3),Scan(idxScan,4),'r','filled')
-scatter3(GNSS(idxGNSS,2),GNSS(idxGNSS,3),GNSS(idxGNSS,4),'r','filled')
-% Scan(:,2:4) = Trafo9(Scan(:,2:4),trafoECEF2);    % rotate around x
-% Scan(:,2:4) = Trafo9(Scan(:,2:4),[1 1 1 -0.1 0 0 0 0 0]');    % rotate around y
-
-% % Estimate x-rotation with furthest point (might be added later)
-xrotGNSS = mod(atan2(GNSS(idxGNSS,4)-GNSS(1,4),GNSS(idxGNSS,3)-GNSS(1,3)),2*pi);
-xrotScan = mod(atan2(Scan(idxScan,4)-Scan(1,4),Scan(idxScan,3)-Scan(1,3)),2*pi);
-xRot = xrotScan-xrotGNSS
-% ADD ROTATION!!!!
-trafoECEF2 = [1 1 1 -xRot 0 0 0 0 0]';
-Scan(:,2:4) = Trafo9(Scan(:,2:4),trafoECEF2);    % rotate around x
-
-
 
 % Find initial offset and add to scan trajectory
 trans = (GNSS(1,2:4)-Scan(1,2:4))';
 Scan(:,2:4) = Scan(:,2:4)+trans';
-
-% Plot trajectories
-figure
-plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4))
-hold on
-view([60 55])
-grid on
-plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
-scatter3(Scan(idxScan,2),Scan(idxScan,3),Scan(idxScan,4),'r','filled')
-scatter3(GNSS(idxGNSS,2),GNSS(idxGNSS,3),GNSS(idxGNSS,4),'r','filled')
 
 % Combine rotations
 rotS1 = [trafoCoarse(1) 0 0; 0 trafoCoarse(2) 0; 0 0 trafoCoarse(3)]*...
        [cos(trafoCoarse(6)) -sin(trafoCoarse(6)) 0; sin(trafoCoarse(6)) cos(trafoCoarse(6)) 0; 0 0 1]*...
        [cos(trafoCoarse(5)) 0 sin(trafoCoarse(5)); 0 1 0; -sin(trafoCoarse(5)) 0 cos(trafoCoarse(5))]*...
        [1 0 0; 0 cos(trafoCoarse(4)) -sin(trafoCoarse(4)); 0 sin(trafoCoarse(4)) cos(trafoCoarse(4))];
-rotS2 = [trafoECEF(1) 0 0; 0 trafoECEF(2) 0; 0 0 trafoECEF(3)]*...
-       [cos(trafoECEF(6)) -sin(trafoECEF(6)) 0; sin(trafoECEF(6)) cos(trafoECEF(6)) 0; 0 0 1]*...
-       [cos(trafoECEF(5)) 0 sin(trafoECEF(5)); 0 1 0; -sin(trafoECEF(5)) 0 cos(trafoECEF(5))]*...
-       [1 0 0; 0 cos(trafoECEF(4)) -sin(trafoECEF(4)); 0 sin(trafoECEF(4)) cos(trafoECEF(4))];
-rotS = rotS2*rotS1;
-
-close all
+% rotS2 = [trafoECEF(1) 0 0; 0 trafoECEF(2) 0; 0 0 trafoECEF(3)]*...
+%        [cos(trafoECEF(6)) -sin(trafoECEF(6)) 0; sin(trafoECEF(6)) cos(trafoECEF(6)) 0; 0 0 1]*...
+%        [cos(trafoECEF(5)) 0 sin(trafoECEF(5)); 0 1 0; -sin(trafoECEF(5)) 0 cos(trafoECEF(5))]*...
+%        [1 0 0; 0 cos(trafoECEF(4)) -sin(trafoECEF(4)); 0 sin(trafoECEF(4)) cos(trafoECEF(4))];
+% rotS = rotS2*rotS1;
+rotS = rotS1;
 end
 
