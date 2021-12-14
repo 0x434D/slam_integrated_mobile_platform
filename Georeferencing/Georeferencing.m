@@ -6,7 +6,7 @@ format longG
 clc
 fprintf('Georeferencing - Trajectory matching\n')
 
-addpath('icp')
+addpath('timeMatching')
 step = 0.1;
 
 %% Define Data
@@ -36,8 +36,11 @@ ScanBackup = Scan;                        % save original Scan trajectory
 % Reduce scan trajectory times 
 Scan(:,1) = Scan(:,1)-Scan(1,1);
 
-% Delete first 200 GNSS measurements to compensate time difference (experimental!)
-GNSS = GNSS(200:end,:);
+% Delete GNSS measurements bevore moving via time matching
+[timeOffset,~] = findTimeDelay(Scan, [GNSS(:,2:4) GNSS(:,1)], 0.01);
+close all   
+[~,idx] = min(abs(GNSS(:,1)-GNSS(1,1)-timeOffset)); % find index of time delay
+GNSS = GNSS(idx:end,:);                             % now same trajectory start as Scan
 
 % Get mean time step size
 ScanTSS = mean(diff(Scan(:,1)));
