@@ -9,8 +9,8 @@ clc
 addpath('..\');
 
 % Switch between test run 1 and 2
-testCase = 'First1';
-% testCase = 'First2';
+% testCase = 'First1';
+testCase = 'First2';
 % testCase = 'RTK1'; % Do not use yet, GNSS trajectory missing
 % testCase = 'RTK2';
 

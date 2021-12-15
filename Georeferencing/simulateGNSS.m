@@ -33,15 +33,17 @@ else
     error("Invalid lever arm input. Please give a 1x3 or 3x1 numeric array");
 end
 
+rotz = [0 -1 0; 1 0 0; 0 0 1];
+
 for i=1:size(traj_scan,1)
     switch dat_type
         case 'mat'
             rotMat = quat2rotm(traj_scan(i,5:8));
-            leverArm_i = rotz(90) * rotMat * leverArm;
+            leverArm_i = rotz * rotMat * leverArm;
             traj_GNSS(i,2:4) = traj_scan(i,2:4) + leverArm_i';
         case 'table'
             rotMat = quat2rotm(traj_scan{i,5:8});
-            leverArm_i = rotz(90) * rotMat * leverArm;
+            leverArm_i = rotz * rotMat * leverArm;
             traj_GNSS{i,2:4} = traj_scan{i,2:4} + leverArm_i';
     end
 end
