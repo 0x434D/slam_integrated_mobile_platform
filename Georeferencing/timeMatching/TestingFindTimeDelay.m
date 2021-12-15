@@ -9,10 +9,10 @@ clc
 addpath('..\');
 
 % Switch between test run 1 and 2
-% testCase = 'First1';
+testCase = 'First1';
 % testCase = 'First2';
 % testCase = 'RTK1'; % Do not use yet, GNSS trajectory missing
-testCase = 'RTK2';
+% testCase = 'RTK2';
 
 % Set step size
 step_size = 0.1;
@@ -99,6 +99,7 @@ title('Coarse Match')
 trafo9 = TimEst9Trafo3D(test(:,2:4),traj_match(:,1:3),[1 1 1 0 0 0 0 0 0]',1e-5);
 
 traj_scanTrans = Trafo9(test(:,2:4),trafo9);
+
 %%
 figure
 plot3(traj_gnss(:,1),traj_gnss(:,2),traj_gnss(:,3),'-b')
@@ -109,6 +110,9 @@ plot3(traj_scanTrans(:,1),traj_scanTrans(:,2),traj_scanTrans(:,3),'-r')
 legend('GNSS','Transformed scan')
 title('Transformierte Scan Trajektorie vs GNSS')
 
-std_Trafo =sum(vecnorm(test(:,2:4)-traj_match(:,1:3),2,2))/length(test(:,1));
-
+std_Trafo = vecnorm(vecnorm(test(:,2:4)-traj_match(:,1:3),2,2))/sqrt(length(test(:,1)));
+std_TrafoX = vecnorm(vecnorm(test(:,2)-traj_match(:,1),2,2))/sqrt(length(test(:,1)));
+std_TrafoY = vecnorm(vecnorm(test(:,3)-traj_match(:,2),2,2))/sqrt(length(test(:,1)));
+std_TrafoZ = vecnorm(vecnorm(test(:,4)-traj_match(:,3),2,2))/sqrt(length(test(:,1)));
+fprintf("Standard deveation XYZ: \t%.4f\nStandard deveation X: \t\t%.4f\nStandard deveation Y: \t\t%.4f\nStandard deveation Z: \t\t%.4f\n", std_Trafo, std_TrafoX, std_TrafoY, std_TrafoZ)
 
