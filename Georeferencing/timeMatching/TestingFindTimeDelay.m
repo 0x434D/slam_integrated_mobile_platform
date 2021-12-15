@@ -9,8 +9,8 @@ clc
 addpath('..\');
 
 % Switch between test run 1 and 2
-% testCase = 'First1';
-testCase = 'First2';
+testCase = 'First1';
+% testCase = 'First2';
 % testCase = 'RTK1'; % Do not use yet, GNSS trajectory missing
 % testCase = 'RTK2';
 
@@ -19,7 +19,7 @@ step_size = 0.1;
 
 % lever arm
 
-lever = [-1.0967 13.3986 20.201] .* 1e-2;
+lever = [-0.011 0.134 0.202];
 
 switch testCase
     case 'First1'

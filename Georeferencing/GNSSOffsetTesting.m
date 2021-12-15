@@ -4,20 +4,17 @@ clc
 
 %%
 
-data_IP = table2array(readtable(".\Data\ScanSecondRun.txt"));
+data_IP = table2array(readtable(".\Data\ScanRTKSecondRun.txt"));
 
 %%
-data_GNSS_Sim = simulateGNSS(data_IP,[-0.3, -0.2, 0]);
+data_GNSS_Sim = simulateGNSS(data_IP,[-0.011 0.134 0.202]);
 R =quat2rotm(data_GNSS_Sim(:,5:8));
-
-% R = 
-
 
 
 % Initialize video
-myVideo = VideoWriter('offsetTestVid'); %open video file
-myVideo.FrameRate = 20;  %can adjust this, 5 - 10 works well for me
-open(myVideo)
+% myVideo = VideoWriter('offsetTestVid'); %open video file
+% myVideo.FrameRate = 20;  %can adjust this, 5 - 10 works well for me
+% open(myVideo)
 
 figure(1)
 hold on
@@ -62,31 +59,31 @@ for i=1800:10:8000 %size(data_GNSS_Sim,1)
     wheel3= [1.1 .5 .5 1.1; -.4 -.4 -.75 -.75];
     wheel4= [-1.1 -.5 -.5 -1.1; .4 .4 .75 .75];
     
-    cart=[0 -1; 1, 0] * R(1:2,1:2,i)*cart;
+    cart=[0 1; -1, 0] * R(1:2,1:2,i)*cart;
     cart=cart';
     cart=cart+data_IP(i,2:3);
     
-    wheel1=[0 -1; 1, 0] * R(1:2,1:2,i)*wheel1;
+    wheel1=[0 1; -1, 0] * R(1:2,1:2,i)*wheel1;
     wheel1=wheel1';
     wheel1=wheel1+data_IP(i,2:3);
     
-    wheel2=[0 -1; 1, 0] * R(1:2,1:2,i)*wheel2;
+    wheel2=[0 1; -1, 0] * R(1:2,1:2,i)*wheel2;
     wheel2=wheel2';
     wheel2=wheel2+data_IP(i,2:3);
     
-    wheel3=[0 -1; 1, 0] * R(1:2,1:2,i)*wheel3;
+    wheel3=[0 1; -1, 0] * R(1:2,1:2,i)*wheel3;
     wheel3=wheel3';
     wheel3=wheel3+data_IP(i,2:3);
     
-    wheel4=[0 -1; 1, 0] * R(1:2,1:2,i)*wheel4;
+    wheel4=[0 1; -1, 0] * R(1:2,1:2,i)*wheel4;
     wheel4=wheel4';
     wheel4=wheel4+data_IP(i,2:3);
     
-    xQuat=[0 -1; 1, 0] * R(1:2,1:2,i)*xQuat;
+    xQuat=[0 1; -1, 0] * R(1:2,1:2,i)*xQuat;
     xQuat=xQuat';
     xQuat=xQuat+data_IP(i,2:3);
     
-    yQuat=[0 -1; 1, 0] * R(1:2,1:2,i)*yQuat;
+    yQuat=[0 1; -1, 0] * R(1:2,1:2,i)*yQuat;
     yQuat=yQuat';
     yQuat=yQuat+data_IP(i,2:3);
 
@@ -97,7 +94,7 @@ for i=1800:10:8000 %size(data_GNSS_Sim,1)
     drawnow
     
     frame = getframe(gcf); %get frame
-    writeVideo(myVideo, frame);
+%     writeVideo(myVideo, frame);
 end
 
-close(myVideo);
+% close(myVideo);
