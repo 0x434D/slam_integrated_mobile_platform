@@ -31,6 +31,7 @@ ScanRaw = load('Data\testSCAN_RTK.txt');
 
 % Add lever arm to scan trajectory with orientation from scanner
 Scan = simulateGNSS(ScanRaw, leverArm);
+% Scan = ScanRaw;
 ScanBackup = Scan;                        % save original Scan trajectory
 
 % Reduce scan trajectory times 
@@ -91,7 +92,7 @@ plot3(ScanBackup(:,2),ScanBackup(:,3),ScanBackup(:,4),'g')
 legend('GNSS','SCAN','Location','NorthWest')
 title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
-% print('-dpng','-r200',"AccurateTrafo_Ugly.png")
+% print('-dpng','-r200',"AccurateTrafo_Good.png")
 
 %% Estimate accuracy
 bound = 200;
@@ -140,6 +141,19 @@ fprintf('Standard deviation: %.3f m\n',stdevxy)
 fprintf('\nAccuracy in X, Y, Z:\n')
 fprintf('Mean point match distance (X,Y,Z): [%.3f %.3f %.3f] m\n',meanx,meany,meanz)
 fprintf('Standard deviation (X,Y,Z): [%.3f %.3f %.3f] m\n',stdx,stdy,stdz)
+
+% Plot point match distance in all axes
+figure
+hold on
+grid on
+plot(1:length(match), match(:,5));
+plot(1:length(match), match(:,6));
+plot(1:length(match), match(:,7));
+legend('in X','in Y','in Z')
+title('Point match distance')
+xlabel('Time')
+ylabel('Distance [m]')
+% print('-dpng','-r200',"Error_withoutLever.png")
 
 % TODO: 
 %       - irgendwie winkelbild noch benutzen?
