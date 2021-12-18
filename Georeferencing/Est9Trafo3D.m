@@ -18,7 +18,7 @@ function x = Est9Trafo3D(PA, PB, xinit, t)
 %           PB      = identische Punkte im System B [X1 Y1 Z1; X2 ...]
 %           xinit   = Naeherungswerte fuer die unbekannten Parameter
 %           t       = Wert fuer das Abbruchkriterium der Iteration
-% Outut:    x       = 6 unbekannte Parameter (mx,my,mz, rx,ry,rz, cx,cy,cz)
+% Outut:    x       = 9 unbekannte Parameter (mx,my,mz, rx,ry,rz, cx,cy,cz)
 
 % Modellparameter
 G = eye(size(PA,1)*3,size(PA,1)*3);     % Gewichtsmatrix
@@ -58,9 +58,25 @@ for iter = 1:itMax
     % Unbekannte Parameter updaten
     x0 = x0 + Dx;
 
-    % % Residuen
-    % vhat = A*Dx+w;
+    % Verbesserte Beobachtungen und Residuen (ehat = y - yhat)
+    yhat = A*Dx+reshape(P0',[size(P0,1)*3,1]);
+    ehat = reshape(PB',[size(PB,1)*3,1]) - yhat;
 
+    % Sigma a-posteriori
+    % sig = ehat'*G*ehat/(size(A,1)-length(Dx));
+
+    % Kovarianzmatrix der Unbekannten und der Beobachtungen
+    % Sigx = sig*inv(A'*G*A);
+    % Sigy = A*Sigx*A';
+      
+    % Neue Gewichte fuer Gewichtsmatrix
+    % Pro: Verbessert Ergebnisse um etwa 5 mm
+    % Contra: Erhöht Laufzeit deutlich, 7 Iterationen ICP nicht mehr 
+    % möglich weil die norm(Dx) nicht mehr klein genug wird, wahrscheinlich
+    % unstabil bei anderen Trajektorien
+%     weights = 1-(abs(ehat)/max(abs(ehat)));
+%     G = diag(weights);
+    
     % Abbruchkriterium 
     if norm(Dx) < t
         % fprintf('Konvergenz nach %.0f Iterationen\n',iter)
@@ -72,7 +88,7 @@ for iter = 1:itMax
 end
 
 % % Orthogonalitaetsprobe
-% check = A'*vhat
+% check = A'*ehat
 
 % Parameter der Transformation
 x = x0;
