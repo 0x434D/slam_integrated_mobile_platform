@@ -89,6 +89,7 @@ for i = 1:length(ScanBackup)
    ScanBackup(i,2:4) = rotScale * ScanBackup(i,2:4)' + translation;
 end
 plot3(ScanBackup(:,2),ScanBackup(:,3),ScanBackup(:,4),'g')
+axis equal
 legend('GNSS','SCAN','Location','NorthWest')
 title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
