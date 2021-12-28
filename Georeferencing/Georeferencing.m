@@ -30,8 +30,9 @@ GNSS = [GPS2(:,2)*1e-6 GNSS];                   % add time in [s]
 ScanRaw = load('Data\testSCAN_RTK.txt');
 
 % Add lever arm to scan trajectory with orientation from scanner
-Scan = simulateGNSS(ScanRaw, leverArm);
-% Scan = ScanRaw;
+additionalRot = [1 0 0; 0 1 0; 0 0 1];
+Scan = simulateGNSS(ScanRaw, leverArm, additionalRot);
+Scan = ScanRaw;
 ScanBackup = Scan;                        % save original Scan trajectory
 
 % Reduce scan trajectory times 
@@ -42,6 +43,9 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 close all   
 [~,idx] = min(abs(GNSS(:,1)-GNSS(1,1)-timeOffset)); % find index of time delay
 GNSS = GNSS(idx:end,:);                             % now same trajectory start as Scan
+
+% Save GNSS trajectory as variable
+save('GNSS_Trajectory_test.mat','GNSS');
 
 % Get mean time step size
 ScanTSS = mean(diff(Scan(:,1)));
