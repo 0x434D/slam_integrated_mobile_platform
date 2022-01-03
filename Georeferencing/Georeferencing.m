@@ -16,7 +16,8 @@ leverArm = [-0.011 0.134 0.202]';       % from CAD model
 % Load GNSS trajectory (format: [time [s], X [m], Y [m], Z [m]])
 load('Data\testGNSS_RTK.mat','POS','POS_label','GPS2','GPS2_label');
 
-% Select GPS2 (GNSS only) or KF-Solution (GNSS + IMU)
+% Select GPS2 (GNSS only) or KF-Solution (GNSS + IMU) and transform to flat
+% earth frame for easier usage and orientation
 % GNSS = lla2ecef(POS(:,3:5));            % transform to ECEF [m]
 % GNSS = [POS(:,2)*1e-6 GNSS];            % add time in [s]
 % GNSS = lla2ecef(GPS2(:,8:10));          % transform to ECEF [m]
@@ -24,14 +25,21 @@ load('Data\testGNSS_RTK.mat','POS','POS_label','GPS2','GPS2_label');
 flatRef = [mean(GPS2(:,8:9)) 0];                % reference point for flat earth [°, °, m]
 GNSS = lla2flat(GPS2(:,8:10),flatRef(1:2),0,0); % flat earth coordinates [m]
 GNSS = [GNSS(:,2) GNSS(:,1) GNSS(:,3)];         % Switch order to X, Y, Z
+
+% Get GPS time 
+epoch = datetime(1980,1,6,'TimeZone','UTCLeapSeconds');
+dtUTC = datenum(epoch + days(GPS2(:,5)*7) + seconds(GPS2(:,4)*1e-3));
+% datetime(dtUTC,'ConvertFrom','datenum','Format', 'yyyy-MM-dd HH:mm:ss.SSS')
+% GNSS = [dtUTC GNSS];    % add time in [days]
 GNSS = [GPS2(:,2)*1e-6 GNSS];                   % add time in [s]
 
 % Load Scanner trajectory (format: [time [s], X [m], Y [m], Z [m] ...])
 ScanRaw = load('Data\testSCAN_RTK.txt');
 
 % Add lever arm to scan trajectory with orientation from scanner
-Scan = simulateGNSS(ScanRaw, leverArm);
-% Scan = ScanRaw;
+% additionalRot = [1 0 0; 0 1 0; 0 0 1];
+% Scan = simulateGNSS(ScanRaw, leverArm, additionalRot);
+Scan = ScanRaw;
 ScanBackup = Scan;                        % save original Scan trajectory
 
 % Reduce scan trajectory times 
@@ -42,6 +50,9 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 close all   
 [~,idx] = min(abs(GNSS(:,1)-GNSS(1,1)-timeOffset)); % find index of time delay
 GNSS = GNSS(idx:end,:);                             % now same trajectory start as Scan
+
+% % Save GNSS trajectory as variable
+% save('GNSS_Trajectory_test.mat','GNSS');
 
 % Get mean time step size
 ScanTSS = mean(diff(Scan(:,1)));
