@@ -195,12 +195,9 @@ ScanPC.header.x_offset = mean(PC_transf(:,1));
 ScanPC.header.y_offset = mean(PC_transf(:,2));
 ScanPC.header.z_offset = mean(PC_transf(:,3));
 
-ScanPC.x = PC_transf(:,1)-ScanPC.header.x_offset;
-ScanPC.y = PC_transf(:,2)-ScanPC.header.y_offset;
-ScanPC.z = PC_transf(:,3)-ScanPC.header.z_offset;
-
-ScanPC.header.header_size = 230;
-ScanPC.header.offset_to_point_data = 230;
+ScanPC.x = PC_transf(:,1);%-ScanPC.header.x_offset;
+ScanPC.y = PC_transf(:,2);%-ScanPC.header.y_offset;
+ScanPC.z = PC_transf(:,3);%-ScanPC.header.z_offset;
 
 write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
 
