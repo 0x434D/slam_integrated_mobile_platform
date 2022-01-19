@@ -18,7 +18,7 @@ step = 0.1;
 [ScanPCFileName,ScanPCPathName,~] = uigetfile('*.laz;*.las', 'Select the input Scan Pointcloud File', '..\Data');
 
 % Load GNSS trajectory (format: [time [s], X [m], Y [m], Z [m]])
-load([GNSSPathName GNSSFileName],'POS','POS_label','GPS2','GPS2_label');
+load([GNSSPathName GNSSFileName],'POS','POS_label','GPS_1','GPS_label');
 % load('Data\testGNSS_RTK.mat','POS','POS_label','GPS2','GPS2_label');
 
 % Select GPS2 (GNSS only) or KF-Solution (GNSS + IMU) and transform to flat
@@ -27,10 +27,9 @@ load([GNSSPathName GNSSFileName],'POS','POS_label','GPS2','GPS2_label');
 % GNSS = [POS(:,2)*1e-6 GNSS];            % add time in [s]
 % GNSS = lla2ecef(GPS2(:,8:10));          % transform to ECEF [m]
 % GNSS = [GPS2(:,2)*1e-6 GNSS];           % add time in [s]
-flatRef = [mean(GPS2(:,8:9)) 0];                % reference point for flat earth [°, °, m]
-GNSS = lla2flat(GPS2(:,8:10),flatRef(1:2),0,0); % flat earth coordinates [m]
-GNSS = [GNSS(:,2) GNSS(:,1) GNSS(:,3)];         % Switch order to X, Y, Z
-                  % add time in [s]
+flatRef = [mean(GPS_1(:,9:10)) 0];                  % reference point for flat earth [°, °, m]
+GNSS = lla2flat(GPS_1(:,9:11),flatRef(1:2),0,0);    % flat earth coordinates [m]
+GNSS = [GNSS(:,2) GNSS(:,1) GNSS(:,3)];             % Switch order to X, Y, Z
 
 % Load Scanner trajectory (format: [time [s], X [m], Y [m], Z [m] ...])
 ScanRaw = load([ScanTPathName ScanTFileName]);
@@ -52,10 +51,10 @@ ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
 
 % Get GPS time 
 epoch = datetime(1980,1,6,'TimeZone','UTCLeapSeconds');
-dtUTC = datenum(epoch + days(GPS2(:,5)*7) + seconds(GPS2(:,4)*1e-3));
+dtUTC = datenum(epoch + days(GPS_1(:,6)*7) + seconds(GPS_1(:,5)*1e-3) + hours(1));
 % datetime(dtUTC,'ConvertFrom','datenum','Format', 'yyyy-MM-dd HH:mm:ss.SSS')
-% GNSS = [dtUTC GNSS];    % add time in [days]
-GNSS = [GPS2(:,2)*1e-6 GNSS]; 
+GNSS = [dtUTC*24*3600 GNSS];    % add time in [seconds]
+% GNSS = [GPS2(:,2)*1e-6 GNSS]; 
 
 % Delete GNSS measurements bevore moving via time matching
 [timeOffset,~] = findTimeDelay(Scan, [GNSS(:,2:4) GNSS(:,1)], 0.01);
