@@ -10,7 +10,7 @@ addpath(genpath('..\'))
 
 %% Define Data
 % Define lever arm [m]
-leverArm = [-0.011 0.134 0.202]';       % from CAD model
+leverArm = [-0.011 0.134 0.397]';       % from CAD model
 step = 0.1;
 
 [GNSSFileName,GNSSPathName,~] = uigetfile('*.txt;*.mat', 'Select the input GNSS Trajectory File', '..\Data');
@@ -37,8 +37,8 @@ ScanRaw = load([ScanTPathName ScanTFileName]);
 
 % Add lever arm to scan trajectory with orientation from scanner
 % additionalRot = [1 0 0; 0 1 0; 0 0 1];
-% Scan = simulateGNSS(ScanRaw, leverArm, additionalRot);
-Scan = ScanRaw;
+Scan = simulateGNSS(ScanRaw, leverArm);
+% Scan = ScanRaw;
 ScanBackup = Scan;                        % save original Scan trajectory
 
 % Reduce scan trajectory times 
@@ -181,6 +181,26 @@ ylabel('Distance [m]')
 %% Transform Point Cloud
 
 PC_transf = [ScanPC.x, ScanPC.y, ScanPC.z] * rotScale' + translation';
+
+% Save for ColorCoding in Flat Earth
+ScanPC.header.max_x = max(PC_transf(:,1));
+ScanPC.header.min_x = min(PC_transf(:,1));
+ScanPC.header.max_y = max(PC_transf(:,2));
+ScanPC.header.min_y = min(PC_transf(:,2));
+ScanPC.header.max_z = max(-PC_transf(:,3));
+ScanPC.header.min_z = min(-PC_transf(:,3));
+
+ScanPC.header.x_offset = mean(PC_transf(:,1));
+ScanPC.header.y_offset = mean(PC_transf(:,2));
+ScanPC.header.z_offset = mean(-PC_transf(:,3));
+
+ScanPC.y = PC_transf(:,1);%-ScanPC.header.x_offset;
+ScanPC.x = PC_transf(:,2);%-ScanPC.header.y_offset;
+ScanPC.z = -PC_transf(:,3);%-ScanPC.header.z_offset;
+
+write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud3.las']);
+
+% Save finally in ECEF
 PC_transf = lla2ecef(flat2lla(PC_transf, flatRef(1:2),0, 0));
 
 ScanPC.header.max_x = max(PC_transf(:,1));
@@ -198,7 +218,7 @@ ScanPC.x = PC_transf(:,1);%-ScanPC.header.x_offset;
 ScanPC.y = PC_transf(:,2);%-ScanPC.header.y_offset;
 ScanPC.z = PC_transf(:,3);%-ScanPC.header.z_offset;
 
-write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
+% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
 
 
 
