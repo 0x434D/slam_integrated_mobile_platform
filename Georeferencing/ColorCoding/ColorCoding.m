@@ -1,7 +1,7 @@
 %% Colour coding point cloud
 % Author: SIMP Team
 clearvars
-close all
+% close all
 format longG
 clc
 fprintf('Color coding point cloud\n')
@@ -62,19 +62,22 @@ idxBounds = [1;pointIdx(1:end-1)+floor(diff(pointIdx)/2);length(pointTimes)];
 
 %% Load GNSS trajectory from MatLab file (Georeferencing output)
 gnss = load('GNSS_Trajectory_RTKrun.mat').GNSS;
+scan = load('Scan_Trajectory_RTKrun.mat').Scan;
+rotScale = load('Scan_Trajectory_RTKrun.mat').rotScale;
 
-% DELETE LATER
+% DELETE LATER (this is beacuse the pointcloud is also flipped)
 gnss = [gnss(:,1) gnss(:,3) gnss(:,2) -gnss(:,4)];
-
+scan = [scan(:,1) scan(:,3) scan(:,2) -scan(:,4) scan(:,5:8)];
 
 %% Loop over all images
 pointColors = uint8(zeros(size(pointTimes,1),3));
-for i = 1:size(frameTimes,1)
+for i = 1:size(frameTimes,1)-1
 % time = gnss(100,1)-0.1;
 time = frameTimes(i);
 
 % Function to get current orientation from GNSS trajectory 
-[orient,camOrig] = tra2ori(gnss,time);
+% [orient,camOrig] = tra2ori(gnss,time,rotScale);
+[orient,camOrig] = tra2ori(scan,time,rotScale);
 
 % % Plot trajectories
 % figure
@@ -158,12 +161,14 @@ time = frameTimes(i);
 % 
 % % walls = [wall1;wall2;wall3;wall4;wall5;wall6];
 walls = ptCloud.Location(idxBounds(i):idxBounds(i+1),:);
+% walls = single([0 0 250]);
 
 %% Find rgb for each scan point
 % Define origin and calculate the vector of each scan point to origin
 % camOrig = [0 0 1];
 camOrig = camOrig - [0 0 0.12];  % antenna position (12 cm below antenna)
 diff = walls-camOrig;
+% diff = [0 10 0; 10 0 0];
 
 % Spheric coordinates (two angles) from cartestian coordinates
 [th,phi,~] = cart2sph(diff(:,1),diff(:,2),diff(:,3));
@@ -171,7 +176,10 @@ diff = walls-camOrig;
 % Adjust orientation with vehicle trajectory 
 % (adding orient results in clockwise rotation)
 % orient = 0;
-th = th+orient;
+% th = th+orient;
+% th = 2*pi-orient+th;
+th = th+pi-(pi/2-orient);
+
 
 % Spheric angles to MatLab plot pixel positions
 % (-1 and +1 to assure result to be withtin [1 1920] or [1 1080])
@@ -187,21 +195,26 @@ rgb = [img(sub2ind(size(img), yImg, xImg, one*1, one))...
 rgb = uint8(rgb);       % convert to uint8 for .las color
 
 % Add rgb colors to point matrix
-walls = [walls rgb];
+% walls = [walls rgb];
 
 %% Showcase
 % Show rotated image and current scan points to be colored
-figure
-rotIdx = [round(orient/(2*pi)*iDim(2)):iDim(2) 1:round(orient/(2*pi)*iDim(2))-1]';
-imshow(img(:,rotIdx,:,i))   
-hold on
-scatter(xImg,yImg,7,'b','filled')
+% % close all
+% figure
+% % rotIdx = [round(orient/(2*pi)*iDim(2)):iDim(2) 1:round(orient/(2*pi)*iDim(2))-1]';
+% % imshow(img(:,rotIdx,:,i))   
+% imshow(img(:,:,:,i))
+% hold on
+% scatter(xImg,yImg,7,'b','filled')
+% drawnow
+% % pause(0.5)
 
-figure
-pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
+% figure
+% pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
 
+% Add up detected point colors for all images
 pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
-i
+i;
 end
 %%
 figure
@@ -245,3 +258,6 @@ pcshow(ptCloud.Location,pointColors)
 %   and check the matching of position and scan points
 % - ISt phi richtig aufgeteilt?
 % - Include Scanner Trajectory
+% - Try changing image time a little, maybe the saved time is always a few
+% 0.1 seconds earlier
+% - NEXT: Use GNSS pos instead of SCAN pos but with SCAN orientation

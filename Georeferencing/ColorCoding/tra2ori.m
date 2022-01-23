@@ -1,4 +1,4 @@
-function [orient,pos] = tra2ori(gnss,time)
+function [orient,pos] = tra2ori(gnss,time,rotScale)
 % Function calculates the orientation and antenna position of the vehicle 
 % based on the given trajectory and time.
 % -------------------------------------------------------------------------
@@ -29,7 +29,7 @@ sizeWin = round(1/deltaT);              % this corresponds to one second
 if idx-sizeWin < 1
     idxLB = 1;
 else
-    idxLB = idx-sizeWin;                 % lower bound
+    idxLB = idx-sizeWin;                % lower bound
 end
 if idx+sizeWin > size(gnss,1)
     idxUB = size(gnss,1);
@@ -68,6 +68,15 @@ if norm(helpLB-helpUB) < 0.01
     end
     orient = mod(atan2(helpUB(1)-helpLB(1),helpUB(2)-helpLB(2)),2*pi);
 end
+
+% Directly get the azimuth from quaternions
+% DCM11 = gnss(idx,5)^2+gnss(idx,6)^2-gnss(idx,7)^2-gnss(idx,8)^2;
+% DCM21 = 2*(gnss(idx,6)*gnss(idx,7)-gnss(idx,8)*gnss(idx,5));
+% orient = mod(atan2(DCM21,DCM11),2*pi);
+rotMat = rotScale*quat2rotm(gnss(idx,5:8))*[0 0 1; -1 0 0; 0 -1 0];
+% orient = 2*pi-mod(atan2(rotMat(1,1),rotMat(1,2)),2*pi);
+orient = 2*pi-mod(atan2(rotMat(1,2),rotMat(1,1))+pi/2,2*pi);
+
 
 % plot3(gnss(idxLB:idxUB,2),gnss(idxLB:idxUB,3),gnss(idxLB:idxUB,4),'r','LineWidth',2)
 % drawnow

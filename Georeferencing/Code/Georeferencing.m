@@ -115,6 +115,9 @@ title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
 % print('-dpng','-r200',"AccurateTrafo_Good.png")
 
+% % Save Scan trajectory as variable
+% save('Scan_Trajectory_RTKrun.mat','Scan','rotScale');
+
 %% Estimate point matching accuracy
 % Find corresponding match points in a loop
 bound = 200;
