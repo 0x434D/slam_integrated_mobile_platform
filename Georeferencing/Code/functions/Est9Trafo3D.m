@@ -60,22 +60,22 @@ for iter = 1:itMax
 
     % Verbesserte Beobachtungen und Residuen (ehat = y - yhat)
     yhat = A*Dx+reshape(P0',[size(P0,1)*3,1]);
-    ehat = reshape(PB',[size(PB,1)*3,1]) - yhat;
+    %  	ehat = reshape(PB',[size(PB,1)*3,1]) - yhat;
 
     % Sigma a-posteriori
-    % sig = ehat'*G*ehat/(size(A,1)-length(Dx));
+    %   sig = ehat'*G*ehat/(size(A,1)-length(Dx));
 
     % Kovarianzmatrix der Unbekannten und der Beobachtungen
-    % Sigx = sig*inv(A'*G*A);
-    % Sigy = A*Sigx*A';
+    %   Sigx = sig*inv(A'*G*A);
+    %   Sigy = A*Sigx*A';
       
     % Neue Gewichte fuer Gewichtsmatrix
     % Pro: Verbessert Ergebnisse um etwa 5 mm
     % Contra: Erhöht Laufzeit deutlich, 7 Iterationen ICP nicht mehr 
     % möglich weil die norm(Dx) nicht mehr klein genug wird, wahrscheinlich
     % unstabil bei anderen Trajektorien
-%     weights = 1-(abs(ehat)/max(abs(ehat)));
-%     G = diag(weights);
+    %  	weights = 1-(abs(ehat)/max(abs(ehat)));
+    % 	G = diag(weights);
     
     % Abbruchkriterium 
     if norm(Dx) < t

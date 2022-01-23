@@ -8,7 +8,7 @@ fprintf('Georeferencing - Trajectory matching\n')
 
 addpath(genpath('..\'))
 
-%% Define Data
+%% Load Data and define parameters
 % Define lever arm [m]
 leverArm = [-0.011 0.134 0.397]';       % from CAD model
 step = 0.1;
@@ -36,7 +36,6 @@ ScanRaw = load([ScanTPathName ScanTFileName]);
 % ScanRaw = load('Data\testSCAN_RTK.txt');
 
 % Add lever arm to scan trajectory with orientation from scanner
-% additionalRot = [1 0 0; 0 1 0; 0 0 1];
 Scan = simulateGNSS(ScanRaw, leverArm);
 % Scan = ScanRaw;
 ScanBackup = Scan;                        % save original Scan trajectory
@@ -48,7 +47,6 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
 
 %% Calculate Time Offset
-
 % Get GPS time 
 epoch = datetime(1980,1,6,'TimeZone','UTCLeapSeconds');
 dtUTC = datenum(epoch + days(GPS_1(:,6)*7) + seconds(GPS_1(:,5)*1e-3) + hours(1));
@@ -117,7 +115,8 @@ title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
 % print('-dpng','-r200',"AccurateTrafo_Good.png")
 
-%% Estimate accuracy
+%% Estimate point matching accuracy
+% Find corresponding match points in a loop
 bound = 200;
 for i = 1:length(GNSS)
     % Get approximate Scan index
@@ -140,21 +139,25 @@ for i = 1:length(GNSS)
     end
 
     % Find closest Scan point in threshold and save index and distance
+    % match order: [GNSSIDX, ScanIDX, distance, dist in XY, dist in x,y,z]
     [~, matchIDX] = min(vecnorm(Scan(idxLB:idxUB,2:4)-GNSS(i,2:4),2,2));
     dist = norm(Scan(idxLB + matchIDX - 1,2:4)-GNSS(i,2:4));
     distxy = norm(Scan(idxLB + matchIDX - 1,2:3)-GNSS(i,2:3));
     distx = norm(Scan(idxLB + matchIDX - 1,2)-GNSS(i,2));
     disty = norm(Scan(idxLB + matchIDX - 1,3)-GNSS(i,3));
     distz = norm(Scan(idxLB + matchIDX - 1,4)-GNSS(i,4));
-    % order: [GNSSIDX, ScanIDX, distance, distance in XY, distance in x,y,z]
     match(i,:) = [i, idxLB + matchIDX - 1, dist, distxy, distx, disty, distz];
 end
+
+% Calculate standard deviations and mean point distances
 stdev = norm(match(:,3))/sqrt(length(match));         % standard deviation 
 stdevxy = norm(match(:,4))/sqrt(length(match));       % standard deviation x,y
 meandiff = sum(match(:,3))/length(match);             % mean point match distance
 meandiffxy = sum(match(:,4))/length(match);           % mean point match distance x,y
 [stdx, stdy, stdz] = deal(norm(match(:,5))/sqrt(length(match)), norm(match(:,6))/sqrt(length(match)), norm(match(:,7))/sqrt(length(match)));
 [meanx, meany, meanz] = deal(sum(match(:,5))/length(match), sum(match(:,6))/length(match), sum(match(:,7))/length(match));
+
+% Output results
 fprintf('\n3D Accuracy (X, Y, Z):\n')
 fprintf('Mean point match distance: %.3f m\n',meandiff)
 fprintf('Standard deviation: %.3f m\n',stdev)
@@ -179,10 +182,9 @@ ylabel('Distance [m]')
 % print('-dpng','-r200',"Error_withoutLever.png")
 
 %% Transform Point Cloud
-
 PC_transf = [ScanPC.x, ScanPC.y, ScanPC.z] * rotScale' + translation';
 
-% Save for ColorCoding in Flat Earth
+% Save for ColorCoding in Flat Earth (remove when including ColorCoding)
 ScanPC.header.max_x = max(PC_transf(:,1));
 ScanPC.header.min_x = min(PC_transf(:,1));
 ScanPC.header.max_y = max(PC_transf(:,2));
@@ -198,7 +200,7 @@ ScanPC.y = PC_transf(:,1);%-ScanPC.header.x_offset;
 ScanPC.x = PC_transf(:,2);%-ScanPC.header.y_offset;
 ScanPC.z = -PC_transf(:,3);%-ScanPC.header.z_offset;
 
-write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud3.las']);
+% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud3.las']);
 
 % Save finally in ECEF
 PC_transf = lla2ecef(flat2lla(PC_transf, flatRef(1:2),0, 0));
@@ -220,15 +222,6 @@ ScanPC.z = PC_transf(:,3);%-ScanPC.header.z_offset;
 
 % write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
 
-
-
-
 %% TODO: 
-%       - irgendwie winkelbild noch benutzen?
-%       - Gewichtsmatrix --> Irgendwann später
 %       - Scan mehr Punkte oder GNSS meh Punkte unabhängig
-%       - Flat Earth Transformation statt ECEF wegen der Drehung --> So besser
-%         matchbar --> Am Ende dann flat2lla und lla2ecef (etwas umständlich aber naja)
-%       - Z-Koordinate ist Hauptproblem, wie erwartbar --> Vll runter gewichten
-%         in P matrix?
-%       - WIeso Z so gut?
+%       - Further improve weighting based on GNSS reliability

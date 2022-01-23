@@ -1,6 +1,4 @@
 %% Simulate GNSS Trajectory in trajner System with Lever Arm Offset and trajner Orientation
-
-
 % ----------------------------------------------------------------------------
 % Input:        traj_scan       -   Scanner Trajectory as numeric array
 %               traj_gnss       -   GNSS Trajectory as numeric array

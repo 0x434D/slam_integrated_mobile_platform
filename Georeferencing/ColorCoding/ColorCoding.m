@@ -190,15 +190,15 @@ rgb = uint8(rgb);       % convert to uint8 for .las color
 walls = [walls rgb];
 
 %% Showcase
-% % Show rotated image and current scan points to be colored
-% figure
-% rotIdx = [round(orient/(2*pi)*iDim(2)):iDim(2) 1:round(orient/(2*pi)*iDim(2))-1]';
-% imshow(img(:,rotIdx,:,i))   
-% hold on
-% scatter(xImg,yImg,7,'b','filled')
+% Show rotated image and current scan points to be colored
+figure
+rotIdx = [round(orient/(2*pi)*iDim(2)):iDim(2) 1:round(orient/(2*pi)*iDim(2))-1]';
+imshow(img(:,rotIdx,:,i))   
+hold on
+scatter(xImg,yImg,7,'b','filled')
 
-% figure
-% pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
+figure
+pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
 
 pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
 i
