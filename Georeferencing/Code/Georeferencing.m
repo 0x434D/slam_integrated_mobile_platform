@@ -60,8 +60,8 @@ close all
 [~,idx] = min(abs(GNSS(:,1)-GNSS(1,1)-timeOffset)); % find index of time delay
 GNSS = GNSS(idx:end,:);                             % now same trajectory start as Scan
 
-% % Save GNSS trajectory as variable
-% save('GNSS_Trajectory_test.mat','GNSS');
+% Save GNSS trajectory as variable
+% save('GNSS_Trajectory_SchlossRun.mat','GNSS');
 
 % Get mean time step size
 ScanTSS = mean(diff(Scan(:,1)));
@@ -109,14 +109,14 @@ for i = 1:length(ScanBackup)
    ScanBackup(i,2:4) = rotScale * ScanBackup(i,2:4)' + translation;
 end
 plot3(ScanBackup(:,2),ScanBackup(:,3),ScanBackup(:,4),'g')
-axis equal
+% axis equal
 legend('GNSS','SCAN','Location','NorthWest')
 title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
 % print('-dpng','-r200',"AccurateTrafo_Good.png")
 
-% % Save Scan trajectory as variable
-% save('Scan_Trajectory_RTKrun.mat','Scan','rotScale');
+% Save Scan trajectory as variable
+% save('Scan_Trajectory_SchlossRun.mat','Scan','rotScale');
 
 %% Estimate point matching accuracy
 % Find corresponding match points in a loop
@@ -203,7 +203,7 @@ ScanPC.y = PC_transf(:,1);%-ScanPC.header.x_offset;
 ScanPC.x = PC_transf(:,2);%-ScanPC.header.y_offset;
 ScanPC.z = -PC_transf(:,3);%-ScanPC.header.z_offset;
 
-% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud3.las']);
+% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud3Schloss.las']);
 
 % Save finally in ECEF
 PC_transf = lla2ecef(flat2lla(PC_transf, flatRef(1:2),0, 0));
