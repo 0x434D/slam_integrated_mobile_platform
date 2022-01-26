@@ -1,5 +1,5 @@
 %% Colour coding point cloud
-% Author: SIMP Team
+% Author: SIMP-Project Team
 clearvars
 close all
 format longG
@@ -15,9 +15,7 @@ pointTimes = seconds(pointTimes.GPSTimeStamp-seconds(1643105216.7643)+seconds(63
 % original ScanBackup time(1): 1642604666.37918 [s]
 %                     Schloss: 1643105216.7643
 % time offset from Georeferencing: 63809913318 [s]
-%                         Schloss: 63810413860.8 
-% figure
-% pcshow(ptCloud.Location,ptCloud.Color)
+%                         Schloss: 63810413860.8
 
 %% Get image data
 % % Read video and save dimensions 
@@ -67,25 +65,21 @@ scan = [scan(:,1) scan(:,3) scan(:,2) -scan(:,4) scan(:,5:8)];
 
 %% Loop over all images
 pointColors = uint8(zeros(size(pointTimes,1),3));
-for i = 1:size(frameTimes,1)-1 
+for i = 1:size(frameTimes,1)-1
 %% Get orientation and position of current frame
 % Add experimental time offset to frame times because the actual recording 
 % time is always a little earlier
-% time = frameTimes(i);
-time = frameTimes(i)-0.7;       
+time = frameTimes(i)-0.7;
 
 % Function to get current orientation from GNSS trajectory 
-[orient2,camOrig] = tra2ori(gnss,time,rotScale,"GNSS");
-[orient,camOrig2] = tra2ori(scan,time,rotScale,"SCAN");
-
-% camOrig = camOrig + [0.03 0.03 0.05];
+[orient,camOrig] = tra2ori(gnss,scan,time,rotScale);
 
 % Load corresponding scan points for image
 points = ptCloud.Location(idxBounds(i):idxBounds(i+1),:);
 
 %% Find rgb for each scan point
 % Define origin and calculate the vector of each scan point to origin
-camOrig = camOrig - [0 0 0.13];  % antenna position (13 cm below antenna)
+camOrig = camOrig - [0 0 0.13];	% camera position (13 cm below antenna)
 diff = points-camOrig;
 
 % Spheric coordinates (two angles) from cartestian coordinates
@@ -106,7 +100,10 @@ one = ones(length(xImg),1);
 rgb = [img(sub2ind(size(img), yImg, xImg, one*1, one*i))...
        img(sub2ind(size(img), yImg, xImg, one*2, one*i))...
        img(sub2ind(size(img), yImg, xImg, one*3, one*i))];
-rgb = uint8(rgb);       % convert to uint8 for .las color
+rgb = uint8(rgb);               % convert to uint8 for .las color
+
+% Add up detected point colors for all images
+pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
 
 %% Showcase
 % Show rotated image and current scan points to be colored
@@ -120,24 +117,18 @@ rgb = uint8(rgb);       % convert to uint8 for .las color
 % drawnow
 % % pause(0.5)
 
-% figure
-% pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
-
-% Add up detected point colors for all images
-pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
-
-% % Pick one image fo showcase
-% if i == 276
-%     figure 
-%     imshow(img(:,:,:,i))
-%     hold on
-%     scatter(xImg,yImg,7,'b','filled')
-%     drawnow
-%     
-%     figure
-%     pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
-%     i
-% end
+% Pick one image fo showcase
+if i == 31
+    figure 
+    imshow(img(:,:,:,i))
+    hold on
+    scatter(xImg,yImg,7,'b','filled')
+    drawnow
+    
+    figure
+    pcshow(ptCloud.Location(idxBounds(i):idxBounds(i+1),:),rgb)
+    i
+end
 end
 
 %% Plot whole point cloud
@@ -153,13 +144,6 @@ pcshow(ptCloud.Location,pointColors)
 % end
 
 %% TODO:
-% - Get image orientation from scanning trajectory
-%       - Load GPS time in useful format (year, month, day etc.)
-%       - important that first image is after movement started, otherwise
-%       the orientation doesn't work --> applied quick fix but not perfect.
-%       The first and last picture should be handpicked
 % - Scan coordinates should be in flat earth frame
-% - Try changing image time a little, maybe the saved time is always a few
-% 0.1 seconds earlier
 % - Create a mask for Scanner and antenna platform
 % - Test with video instead of images?
