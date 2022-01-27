@@ -210,7 +210,7 @@ ScanPC.blue = uint16(RGB(:,3));
 fprintf('\nSave final cloud\n')
 
 % Save finally in ECEF
-PC_transf = lla2ecef(flat2lla(PC_transf, flatRef(1:2),0, 0));
+PC_transf = lla2ecef(flat2lla(PC_transf(:,[2,1,3]), flatRef(1:2),0, 0));
 
 ScanPC.header.max_x = max(PC_transf(:,1));
 ScanPC.header.min_x = min(PC_transf(:,1));
