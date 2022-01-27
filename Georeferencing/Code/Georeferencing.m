@@ -206,6 +206,44 @@ ScanPC.red = uint16(RGB(:,1));
 ScanPC.green = uint16(RGB(:,2));
 ScanPC.blue = uint16(RGB(:,3));
 
+%% Remove Moving Objects
+
+% parameters for 100% point cloud!
+voxelLength = 0.5;
+timeDiff = 5;
+
+del = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
+
+% unnecessary, will be replaced with PC_transf
+% ScanPC.x(del) = [];
+% ScanPC.y(del) = [];
+% ScanPC.z(del) = [];
+
+ScanPC.intensity(del) = [];
+ScanPC.bits(del) = [];
+ScanPC.classification(del) = [];
+ScanPC.user_data(del) = [];
+ScanPC.scan_angle(del) = [];
+ScanPC.point_source_id(del) = [];
+ScanPC.gps_time(del) = [];
+ScanPC.red(del) = [];
+ScanPC.green(del) = [];
+ScanPC.blue(del) = [];
+ScanPC.selection(del) = [];
+
+PC_transf(del,:) = [];
+
+ScanPC.header.number_of_point_records = size(ScanPC.x,1);
+ScanPC.header.number_of_points_by_return = [ScanPC.header.number_of_point_records;0;0;0;0];
+
+% unnecessary because of transformation in next section
+% ScanPC.header.max_x = max(ScanPC.x);
+% ScanPC.header.min_x = min(ScanPC.x);
+% ScanPC.header.max_y = max(ScanPC.y);
+% ScanPC.header.min_y = min(ScanPC.y);
+% ScanPC.header.max_z = max(ScanPC.z);
+% ScanPC.header.min_z = min(ScanPC.z);
+
 %% Save final cloud
 fprintf('\nSave final cloud\n')
 
