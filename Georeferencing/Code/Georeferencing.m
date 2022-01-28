@@ -207,7 +207,7 @@ ScanPC.green = uint16(RGB(:,2));
 ScanPC.blue = uint16(RGB(:,3));
 
 %% Remove Moving Objects
-
+fprintf('\nRemove Moving Objects\n')
 % parameters for 100% point cloud!
 voxelLength = 0.5;
 timeDiff = 5;
@@ -234,7 +234,7 @@ ScanPC.selection(del) = [];
 PC_transf(del,:) = [];
 
 ScanPC.header.number_of_point_records = size(ScanPC.x,1);
-ScanPC.header.number_of_points_by_return = [ScanPC.header.number_of_point_records;0;0;0;0];
+ScanPC.header.number_of_points_by_return(1) = ScanPC.header.number_of_point_records;
 
 % unnecessary because of transformation in next section
 % ScanPC.header.max_x = max(ScanPC.x);
@@ -243,6 +243,13 @@ ScanPC.header.number_of_points_by_return = [ScanPC.header.number_of_point_record
 % ScanPC.header.min_y = min(ScanPC.y);
 % ScanPC.header.max_z = max(ScanPC.z);
 % ScanPC.header.min_z = min(ScanPC.z);
+
+%% Ground Classification
+fprintf('\nGround Classification\n')
+gridResolution = 1;
+ElevationThreshold = 0.2;
+
+ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
