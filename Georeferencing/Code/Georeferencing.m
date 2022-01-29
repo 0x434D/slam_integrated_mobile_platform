@@ -121,7 +121,7 @@ for i = 1:length(ScanBackup)
    ScanBackup(i,2:4) = rotScale * ScanBackup(i,2:4)' + translation;
 end
 plot3(ScanBackup(:,2),ScanBackup(:,3),ScanBackup(:,4),'g')
-axis equal
+% axis equal
 legend('GNSS','SCAN','Location','NorthWest')
 title('Combined Transformation (Coarse + Accurate)')
 view([90 90])
@@ -207,17 +207,13 @@ ScanPC.green = uint16(RGB(:,2));
 ScanPC.blue = uint16(RGB(:,3));
 
 %% Remove Moving Objects
+fprintf('\nRemove moving objects\n')
 
 % parameters for 100% point cloud!
 voxelLength = 0.5;
 timeDiff = 5;
 
 del = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
-
-% unnecessary, will be replaced with PC_transf
-% ScanPC.x(del) = [];
-% ScanPC.y(del) = [];
-% ScanPC.z(del) = [];
 
 ScanPC.intensity(del) = [];
 ScanPC.bits(del) = [];
@@ -235,14 +231,6 @@ PC_transf(del,:) = [];
 
 ScanPC.header.number_of_point_records = size(ScanPC.x,1);
 ScanPC.header.number_of_points_by_return = [ScanPC.header.number_of_point_records;0;0;0;0];
-
-% unnecessary because of transformation in next section
-% ScanPC.header.max_x = max(ScanPC.x);
-% ScanPC.header.min_x = min(ScanPC.x);
-% ScanPC.header.max_y = max(ScanPC.y);
-% ScanPC.header.min_y = min(ScanPC.y);
-% ScanPC.header.max_z = max(ScanPC.z);
-% ScanPC.header.min_z = min(ScanPC.z);
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
@@ -265,7 +253,4 @@ ScanPC.x = PC_transf(:,1);
 ScanPC.y = PC_transf(:,2);
 ScanPC.z = PC_transf(:,3);
 
-write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
-
-%% TODO: 
-%       - Further improve weighting based on GNSS reliability
+% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);

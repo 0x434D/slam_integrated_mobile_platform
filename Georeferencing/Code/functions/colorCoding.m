@@ -19,6 +19,9 @@ function pointColors = colorCoding(pointCloud,pointTimes,firstTime,timeOffset,gn
 % Output:   pointColors = RGB colors for all points (uint8)
 % -------------------------------------------------------------------------
 
+%% Define a mask for points on the scanner or antenna plattform
+mask = logical([zeros(150,1920);ones(660,1920);zeros(150,1920)]);
+
 %% Connect image and scan data via timestamps
 fprintf('\tConnect image and scan data via timestamps\n')
 
@@ -83,21 +86,25 @@ rgb = [img(sub2ind(size(img), yImg, xImg, one*1, one*i))...
        img(sub2ind(size(img), yImg, xImg, one*3, one*i))];
 rgb = uint8(rgb);              % convert to uint8 for .las color
 
+% Set points outside the mask to purple (uncommon color) to change later
+in = mask(sub2ind(size(mask),yImg,xImg));
+rgb(~in,:) = repmat([120 0 255],[size(rgb(~in,:),1),1]);
+
 % Add up detected point colors for all images
 pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
 
 %% Showcase
-% Show rotated image (pick with i) and current scan points to be colored
-if i == 31
-    figure 
-    imshow(img(:,:,:,i))
-    hold on
-    scatter(xImg,yImg,7,'b','filled')
-    drawnow
-    
-    figure
-    pcshow(pointCloud(idxBounds(i):idxBounds(i+1),:),rgb)
-end
+% % Show rotated image (pick with i) and current scan points to be colored
+% if i == 31
+%     figure 
+%     imshow(img(:,:,:,i))
+%     hold on
+%     scatter(xImg,yImg,7,'b','filled')
+%     drawnow
+%     
+%     figure
+%     pcshow(pointCloud(idxBounds(i):idxBounds(i+1),:),rgb)
+% end
 end
 
 %% Plot whole point cloud
