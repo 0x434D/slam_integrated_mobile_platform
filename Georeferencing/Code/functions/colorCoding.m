@@ -20,7 +20,9 @@ function pointColors = colorCoding(pointCloud,pointTimes,firstTime,timeOffset,gn
 % -------------------------------------------------------------------------
 
 %% Define a mask for points on the scanner or antenna plattform
-mask = logical([zeros(150,1920);ones(660,1920);zeros(150,1920)]);
+mask = load('SIMPmask.mat').SIMPmask;
+dsFactor = round(size(mask,1)/iDim(1));    	% determine downsample factor
+mask = mask(1:dsFactor:end,1:dsFactor:end);
 
 %% Connect image and scan data via timestamps
 fprintf('\tConnect image and scan data via timestamps\n')
@@ -49,8 +51,12 @@ pointCloud = [pointCloud(:,2) pointCloud(:,1) -pointCloud(:,3)];
 
 %% Loop over all images
 fprintf('\tLoop over all images\n')
-pointColors = uint8(zeros(size(pointTimes,1),3));
-for i = 1:size(frameTimes,1)-1
+
+% Create variable to safe colors with a flag that indicates whether the
+% point color is inside the mask region (vehicle setup --> false color)
+pointColors = uint8(zeros(size(pointTimes,1),4));
+
+for i = 1:size(frameTimes,1)
 %% Get orientation and position of current frame
 % Add experimental time offset to frame times because the actual recording 
 % time is always a little earlier
@@ -91,11 +97,11 @@ in = mask(sub2ind(size(mask),yImg,xImg));
 rgb(~in,:) = repmat([120 0 255],[size(rgb(~in,:),1),1]);
 
 % Add up detected point colors for all images
-pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
+pointColors(idxBounds(i):idxBounds(i+1),:) = [rgb in];
 
 %% Showcase
 % % Show rotated image (pick with i) and current scan points to be colored
-% if i == 31
+% if i == 276
 %     figure 
 %     imshow(img(:,:,:,i))
 %     hold on
@@ -107,11 +113,45 @@ pointColors(idxBounds(i):idxBounds(i+1),:) = rgb;
 % end
 end
 
+%% Assign new color for points on image mask via spatial neighbourhood
+fprintf('\tAssign new color to occluded points\n')
+
+% Sort all points (and colors) by distance to first point
+pointDist = vecnorm(pointCloud-pointCloud(1,1:3),2,2);
+[~,dIDX] = sort(pointDist);
+colorSort = pointColors(dIDX,1:4);
+
+% List points for which new colors will be determined
+change = find(pointColors(:,4) == 0);
+
+% Get inverse index list of pointDist vector to find change points there
+[~,dIDXinv] = sort(dIDX);
+
+% Loop over all points
+for p = 1:size(change,1)
+    % Find the point in sorted color vector and check limits
+    changeIDX = dIDXinv(change(p));
+    if changeIDX+10 > size(colorSort,1)
+        changeIDX = changeIDX - 10;
+    elseif changeIDX-10 < 1
+        changeIDX = 11;
+    end
+    
+    % Get a pool of 21 neighbouring points to estimate a color
+    pool = colorSort(changeIDX-10:changeIDX+10,1:4);
+    if isempty(pool(pool(:,4) ~= 0,:))
+        warning("Couldn't determine point colors from neighbouring points")
+        pointColors(change(p),:) = [0 0 0 0];
+    else
+        pointColors(change(p),:) = uint8([round(mean(pool(pool(:,4) ~= 0,1:3))) 0]);
+    end
+end
+
 %% Plot whole point cloud
-f1 = figure;
-set(f1, 'Position', [400 50 1400 800])
-view([0 25])
-pcshow(pointCloud,pointColors);
+% f1 = figure;
+% set(f1, 'Position', [400 50 1400 800])
+% view([0 25])
+% pcshow(pointCloud,pointColors(:,1:3));
 
 % gif('SchlossV01.gif','DelayTime',1/40,'overwrite',true)
 % for i = 0:360
@@ -120,8 +160,5 @@ pcshow(pointCloud,pointColors);
 % end
 
 %% TODO:
-% - Scan coordinates should be in flat earth frame
-% - Create a mask for Scanner and antenna platform
 % - Test with video instead of images?
 end
-
