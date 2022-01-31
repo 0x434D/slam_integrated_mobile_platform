@@ -1,11 +1,14 @@
 function del = removeMovingObjects(xyz, t, voxelLength, timeDiff)
+% -------------------------------------------------------------------------
 % removeMovingObjects  tells which point belong to moving objects
 %       if the points contained in a voxel have all been measured in a
 %       short period of time and never again, then there was probably some
 %       movement and the points can be deleted.
 %       actual deletion has to be carried out by vector(del) = [], or
 %       matrix(del,:) = [];
-% 
+% -------------------------------------------------------------------------
+% Authors:     SIMP-Project Team
+% -------------------------------------------------------------------------
 % inputs:
 %   xyz        : x-,y, and z-coordinates as matrix. number of rows == number of points
 %   t          : time of observation for each point
@@ -13,6 +16,7 @@ function del = removeMovingObjects(xyz, t, voxelLength, timeDiff)
 %   timeDiff   : critical time difference
 % output:
 %   del       : boolean vector telling which points can be deleted
+% -------------------------------------------------------------------------
 
 % computes min and max values of x, y and z as multiple of voxelLength
 posMin = zeros(3,1);

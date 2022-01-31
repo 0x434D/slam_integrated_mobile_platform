@@ -11,7 +11,7 @@ addpath(genpath('..\'))
 %% Load data and define parameters
 fprintf('\nLoading Data\n')
 
-% Define lever arm [m]
+% Define lever arm between scanner and GNSS antenna [m]
 leverArm = [-0.011 0.134 0.397]';       % from CAD model
 step = 0.1;
 
