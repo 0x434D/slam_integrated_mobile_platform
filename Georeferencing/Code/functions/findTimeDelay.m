@@ -8,7 +8,7 @@
 % ----------------------------------------------------------------------------
 % Authors:     SIMP-Project Team
 % ----------------------------------------------------------------------------
-% Last Modified:   05.12.2021
+% Last Modified:   31.01.2022
 
 function [timeOffset,timeOffsetInv] = findTimeDelay(traj_scan, traj_gnss, stepSize)
 
@@ -28,46 +28,64 @@ norm_scanInt = interp1(traj_scan(:,1),norm_scan,traj_scan(1,1):stepSize:traj_sca
 timeOffset = finddelay(norm_scanInt,norm_gnssInt);
 timeOffsetInv = finddelay(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
 
-% scale 
-figure;
-scatter(traj_gnssRed(:,1),traj_gnssRed(:,2));
-hold on
-scatter(traj_scanRed(:,1),traj_scanRed(:,2));
-legend('GNSS','Scanner');
-
-figure;
-plot(traj_gnss(:,4)-traj_gnss(1,4),norm_gnss);
-hold on
-plot(traj_scan(:,1)-traj_scan(1,1),norm_scan);
-legend('GNSS','Scanner');
-
-figure;
-plot(norm_gnssInt);
+% Create visual representation
+td = figure;
+set(td, 'Position', [100 100 1000 650])
+sgtitle('Finding time delay using cross-correlation')
+subplot(2,2,[1 2])
+plot(norm_gnssInt,'LineWidth',1.5);
 hold on
 plot(norm_scanInt);
+ylabel('Distance to start [m]')
+xlabel("Time since start [" + num2str(stepSize) + "s]")
+title('Un-matched trajectory times')
 legend('GNSS','Scanner');
 
-figure;
+subplot(2,2,3)
 [c,lags] = xcorr(norm_scanInt,norm_gnssInt);
 stem(lags,c)
+hold on
+grid on
+title('Cross-correlation')
+xlabel("Delay [" + num2str(stepSize) + "s]")
+ylabel('Magnitude')
 
-figure;
-[c,lags] = xcorr(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
-stem(lags,c)
-
-figure;
+subplot(2,2,4)
 if timeOffset<=0
-    plot(norm_gnssInt);
+    plot(norm_gnssInt,'LineWidth',1.5);
     hold on
     plot(norm_scanInt(1+abs(timeOffset):end));
+    title('Matched trajectory times')
+    ylabel('Distance to start [m]')
+    xlabel("Time since start [" + num2str(stepSize) + "s]")
 elseif timeOffset
-    plot(norm_gnssInt(1+abs(timeOffset):end));
+    plot(norm_gnssInt(1+abs(timeOffset):end),'LineWidth',1.5);
     hold on
     plot(norm_scanInt);
+    title('Matched trajectory times')
+    ylabel('Distance to start [m]')
+    xlabel("Time since start [" + num2str(stepSize) + "s]")
 end
 legend('GNSS','Scanner');
 
+% More plots
+% figure;
+% scatter(traj_gnssRed(:,1),traj_gnssRed(:,2));
+% hold on
+% scatter(traj_scanRed(:,1),traj_scanRed(:,2));
+% legend('GNSS','Scanner');
+% 
+% figure;
+% plot(traj_gnss(:,4)-traj_gnss(1,4),norm_gnss);
+% hold on
+% plot(traj_scan(:,1)-traj_scan(1,1),norm_scan);
+% legend('GNSS','Scanner');
+% 
+% figure;
+% [c,lags] = xcorr(norm_scanInt(end:-1:1),norm_gnssInt(end:-1:1));
+% stem(lags,c)
+
+% Return time offset
 timeOffset = timeOffset * stepSize;
 timeOffsetInv = timeOffsetInv * stepSize;
-
 end

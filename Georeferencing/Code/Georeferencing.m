@@ -77,7 +77,6 @@ GNSS = [dtUTC*24*3600 GNSS];    % add time in [seconds]
 
 % Delete GNSS measurements before moving via time matching
 [timeOffset,~] = findTimeDelay(Scan, [GNSS(:,2:4) GNSS(:,1)], 0.01);
-close all
 [~,idx] = min(abs(GNSS(:,1)-GNSS(1,1)-timeOffset)); % find index of time delay
 GNSS = GNSS(idx:end,:);                             % now same trajectory start as Scan
 
@@ -237,7 +236,7 @@ fprintf('\nGround Classification\n')
 gridResolution = 1;
 ElevationThreshold = 0.2;
 
-ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolution, 'ElevationThreshold', ElevationThreshold));
+% ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
