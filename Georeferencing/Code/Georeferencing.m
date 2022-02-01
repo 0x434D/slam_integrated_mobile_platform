@@ -239,7 +239,7 @@ fprintf('\nGround Classification\n')
 gridResolution = 1;
 ElevationThreshold = 0.2;
 
-ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolution, 'ElevationThreshold', ElevationThreshold));
+ScanPC.classification = int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
