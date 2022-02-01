@@ -229,6 +229,10 @@ ScanPC.green(del) = [];
 ScanPC.blue(del) = [];
 ScanPC.selection(del) = [];
 
+ScanPC.x(del) = [];
+ScanPC.y(del) = [];
+ScanPC.z(del) = [];
+
 PC_transf(del,:) = [];
 
 ScanPC.header.number_of_point_records = size(ScanPC.x,1);
