@@ -212,6 +212,9 @@ fprintf('\nRemove moving objects\n')
 voxelLength = 0.5;
 timeDiff = 5;
 
+% For 30% Pointcloud
+% voxelLength = 0.75;
+
 del = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
 
 ScanPC.intensity(del) = [];
@@ -259,4 +262,4 @@ ScanPC.x = PC_transf(:,1);
 ScanPC.y = PC_transf(:,2);
 ScanPC.z = PC_transf(:,3);
 
-% write_las(ScanPC, [ScanPCPathName, 'GeoreferencedPointcloud.las']);
+write_las(ScanPC, [ScanPCPathName, 'SchlossFinal.las']);
