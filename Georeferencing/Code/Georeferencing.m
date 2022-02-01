@@ -231,6 +231,10 @@ ScanPC.green(del) = [];
 ScanPC.blue(del) = [];
 ScanPC.selection(del) = [];
 
+ScanPC.x(del) = [];
+ScanPC.y(del) = [];
+ScanPC.z(del) = [];
+
 PC_transf(del,:) = [];
 
 ScanPC.header.number_of_point_records = size(ScanPC.x,1);
@@ -241,7 +245,7 @@ fprintf('\nGround Classification\n')
 gridResolution = 1;
 ElevationThreshold = 0.2;
 
-ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolution, 'ElevationThreshold', ElevationThreshold));
+ScanPC.classification = int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
