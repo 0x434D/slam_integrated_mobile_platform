@@ -8,6 +8,8 @@ fprintf('Georeferencing:\n')
 
 addpath(genpath('..\'))
 
+outputPath = '..\Data\output\';
+
 %% Load data and define parameters
 fprintf('\nLoading Data\n')
 
@@ -18,7 +20,7 @@ step = 0.1;
 [GNSSFileName,GNSSPathName,~] = uigetfile('*.txt;*.mat', 'Select the input GNSS Trajectory File', '..\Data');
 [ScanTFileName,ScanTPathName,~] = uigetfile('*.txt;*.mat', 'Select the input Scan Trajectory File', '..\Data');
 [ScanPCFileName,ScanPCPathName,~] = uigetfile('*.laz;*.las', 'Select the input Scan Pointcloud File', '..\Data');
-imgPath = uigetdir('..\Data','Select GoPro Image Folder');
+% imgPath = uigetdir('..\Data','Select GoPro Image Folder');
 
 % Load GNSS trajectory (format: [time [s], X [m], Y [m], Z [m]])
 fprintf('\tLoading GNSS trajectory\n')
@@ -47,25 +49,25 @@ fprintf('\tLoading point cloud\n')
 ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
 
 % Load image data
-fprintf('\tLoad image data\n')
-addpath(imgPath)
-imgList = ls(imgPath);
-imgList = imgList(3:end,:); % first two entries are not files
-
-% Read images (and dimensions, times) in a loop and save in img structure
-dsFactor = 3;                                           % downsample factor
-iDim = [2880/dsFactor 5760/dsFactor 3 size(imgList,1)];	% size of img array
-img = zeros(iDim(1),iDim(2),iDim(3),iDim(4),'uint8');  	% [x y rgb frame]
-wait = waitbar(0,"Loading images (0/" + num2str(size(imgList,1)) + ")");
-for i = 1:size(imgList,1)
-    fullImg = imread(imgList(i,:));
-    img(:,:,:,i) = fullImg(1:dsFactor:end,1:dsFactor:end,:);
-    frameDates(i,:) = datetime(imfinfo(imgList(i,:)).DateTime,...
-                               'InputFormat','yyyy:MM:dd HH:mm:ss');
-    frameTimes(i,1) = datenum(frameDates(i,:))*24*3600;	% MATLAB time [s]
-    waitbar(i/size(imgList,1),wait,"Loading images (" + num2str(i) + "/"+ num2str(size(imgList,1)) + ")");
-end
-close(wait);
+% fprintf('\tLoad image data\n')
+% addpath(imgPath)
+% imgList = ls(imgPath);
+% imgList = imgList(3:end,:); % first two entries are not files
+% 
+% % Read images (and dimensions, times) in a loop and save in img structure
+% dsFactor = 3;                                           % downsample factor
+% iDim = [2880/dsFactor 5760/dsFactor 3 size(imgList,1)];	% size of img array
+% img = zeros(iDim(1),iDim(2),iDim(3),iDim(4),'uint8');  	% [x y rgb frame]
+% wait = waitbar(0,"Loading images (0/" + num2str(size(imgList,1)) + ")");
+% for i = 1:size(imgList,1)
+%     fullImg = imread(imgList(i,:));
+%     img(:,:,:,i) = fullImg(1:dsFactor:end,1:dsFactor:end,:);
+%     frameDates(i,:) = datetime(imfinfo(imgList(i,:)).DateTime,...
+%                                'InputFormat','yyyy:MM:dd HH:mm:ss');
+%     frameTimes(i,1) = datenum(frameDates(i,:))*24*3600;	% MATLAB time [s]
+%     waitbar(i/size(imgList,1),wait,"Loading images (" + num2str(i) + "/"+ num2str(size(imgList,1)) + ")");
+% end
+% close(wait);
 
 %% Calculate Time Offset
 fprintf('\nCalculating time offset\n')
@@ -198,12 +200,12 @@ fprintf('\nTransform point cloud\n')
 PC_transf = [ScanPC.x, ScanPC.y, ScanPC.z] * rotScale' + translation';
 
 %% Colorize Point Cloud
-fprintf('\nColorize point cloud\n')
-RGB = colorCoding(PC_transf, ScanPC.gps_time, ScanBackup(1,1),...
-                  timeOffset, GNSS, Scan, rotScale, iDim, img, frameTimes);
-ScanPC.red = uint16(RGB(:,1));
-ScanPC.green = uint16(RGB(:,2));
-ScanPC.blue = uint16(RGB(:,3));
+% fprintf('\nColorize point cloud\n')
+% RGB = colorCoding(PC_transf, ScanPC.gps_time, ScanBackup(1,1),...
+%                   timeOffset, GNSS, Scan, rotScale, iDim, img, frameTimes);
+% ScanPC.red = uint16(RGB(:,1));
+% ScanPC.green = uint16(RGB(:,2));
+% ScanPC.blue = uint16(RGB(:,3));
 
 %% Remove Moving Objects
 fprintf('\nRemove moving objects\n')
@@ -244,6 +246,10 @@ ScanPC.classification = int8(segmentGroundSMRF(pointCloud(PC_transf), gridResolu
 %% Save final cloud
 fprintf('\nSave final cloud\n')
 
+if ~isfolder(outputPath)
+    mkdir(outputPath)
+end
+
 % Save finally in ECEF
 PC_transf = lla2ecef(flat2lla(PC_transf(:,[2,1,3]), flatRef(1:2),0, 0));
 
@@ -262,4 +268,13 @@ ScanPC.x = PC_transf(:,1);
 ScanPC.y = PC_transf(:,2);
 ScanPC.z = PC_transf(:,3);
 
-write_las(ScanPC, [ScanPCPathName, 'SchlossFinal.las']);
+write_las(ScanPC, [outputPath, 'Pointcloud.las']);
+
+% Zip Las File to Laz
+system(['.\functions\laszip.exe -i ' outputPath 'Pointcloud.las -o ' outputPath 'Pointcloud.laz']);
+
+% Save GNSS trajectory as KML
+
+filename = 'trajectory.kml';
+
+kmlwriteline([outputPath, filename], GPS_1(:,9), GPS_1(:,10), GPS_1(:,11), 'Description', 'Trajectory Created by Georeferencing.m', 'Name', 'Trajectory', 'AltitudeMode','clampToGround', 'Color', 'red', 'LineWidth', 3);
