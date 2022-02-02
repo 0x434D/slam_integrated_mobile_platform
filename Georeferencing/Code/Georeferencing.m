@@ -20,16 +20,20 @@ step = 0.1;
 [GNSSFileName,GNSSPathName,~] = uigetfile('*.txt;*.mat', 'Select the input GNSS Trajectory File', '..\Data');
 [ScanTFileName,ScanTPathName,~] = uigetfile('*.txt;*.mat', 'Select the input Scan Trajectory File', '..\Data');
 [ScanPCFileName,ScanPCPathName,~] = uigetfile('*.laz;*.las', 'Select the input Scan Pointcloud File', '..\Data');
-% imgPath = uigetdir('..\Data','Select GoPro Image Folder');
+imgPath = uigetdir('..\Data','Select GoPro Image Folder');
 
 % Load GNSS trajectory (format: [time [s], X [m], Y [m], Z [m]])
 fprintf('\tLoading GNSS trajectory\n')
 load([GNSSPathName GNSSFileName],'POS','POS_label','GPS_1','GPS_label');
 
+% Convert Orthometric Height to Ellipsoidal Height
+geoidHeight = egm96geoid(GPS_1(:,9),GPS_1(:,10));
+GPS_1EH = [GPS_1(:,9:10), GPS_1(:,11)+geoidHeight];
+
 % Select GPS1 (GNSS only) or KF-Solution (GNSS + IMU) and transform to flat
 % earth frame for easier usage and orientation
-flatRef = [mean(GPS_1(:,9:10)) 0];                  % reference point for flat earth [°, °, m]
-GNSS = lla2flat(GPS_1(:,9:11),flatRef(1:2),0,0);    % flat earth coordinates [m]
+flatRef = [mean(GPS_1EH) 0];                  % reference point for flat earth [°, °, m]
+GNSS = lla2flat(GPS_1EH,flatRef(1:2),0,0);    % flat earth coordinates [m]
 GNSS = [GNSS(:,2) GNSS(:,1) GNSS(:,3)];             % Switch order to X, Y, Z
 
 % Load Scanner trajectory (format: [time [s], X [m], Y [m], Z [m] ...])
@@ -46,28 +50,28 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 
 % Load Scan Point Cloud Data
 fprintf('\tLoading point cloud\n')
-ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
+ScanPC = lasdata(string([ScanPCPathName, ScanPCFileName]), 'loadall');
 
 % Load image data
-% fprintf('\tLoad image data\n')
-% addpath(imgPath)
-% imgList = ls(imgPath);
-% imgList = imgList(3:end,:); % first two entries are not files
-% 
-% % Read images (and dimensions, times) in a loop and save in img structure
-% dsFactor = 3;                                           % downsample factor
-% iDim = [2880/dsFactor 5760/dsFactor 3 size(imgList,1)];	% size of img array
-% img = zeros(iDim(1),iDim(2),iDim(3),iDim(4),'uint8');  	% [x y rgb frame]
-% wait = waitbar(0,"Loading images (0/" + num2str(size(imgList,1)) + ")");
-% for i = 1:size(imgList,1)
-%     fullImg = imread(imgList(i,:));
-%     img(:,:,:,i) = fullImg(1:dsFactor:end,1:dsFactor:end,:);
-%     frameDates(i,:) = datetime(imfinfo(imgList(i,:)).DateTime,...
-%                                'InputFormat','yyyy:MM:dd HH:mm:ss');
-%     frameTimes(i,1) = datenum(frameDates(i,:))*24*3600;	% MATLAB time [s]
-%     waitbar(i/size(imgList,1),wait,"Loading images (" + num2str(i) + "/"+ num2str(size(imgList,1)) + ")");
-% end
-% close(wait);
+fprintf('\tLoad image data\n')
+addpath(imgPath)
+imgList = ls(imgPath);
+imgList = imgList(3:end,:); % first two entries are not files
+
+% Read images (and dimensions, times) in a loop and save in img structure
+dsFactor = 3;                                           % downsample factor
+iDim = [2880/dsFactor 5760/dsFactor 3 size(imgList,1)];	% size of img array
+img = zeros(iDim(1),iDim(2),iDim(3),iDim(4),'uint8');  	% [x y rgb frame]
+wait = waitbar(0,"Loading images (0/" + num2str(size(imgList,1)) + ")");
+for i = 1:size(imgList,1)
+    fullImg = imread(imgList(i,:));
+    img(:,:,:,i) = fullImg(1:dsFactor:end,1:dsFactor:end,:);
+    frameDates(i,:) = datetime(imfinfo(imgList(i,:)).DateTime,...
+                               'InputFormat','yyyy:MM:dd HH:mm:ss');
+    frameTimes(i,1) = datenum(frameDates(i,:))*24*3600;	% MATLAB time [s]
+    waitbar(i/size(imgList,1),wait,"Loading images (" + num2str(i) + "/"+ num2str(size(imgList,1)) + ")");
+end
+close(wait);
 
 %% Calculate Time Offset
 fprintf('\nCalculating time offset\n')
@@ -200,12 +204,12 @@ fprintf('\nTransform point cloud\n')
 PC_transf = [ScanPC.x, ScanPC.y, ScanPC.z] * rotScale' + translation';
 
 %% Colorize Point Cloud
-% fprintf('\nColorize point cloud\n')
-% RGB = colorCoding(PC_transf, ScanPC.gps_time, ScanBackup(1,1),...
-%                   timeOffset, GNSS, Scan, rotScale, iDim, img, frameTimes);
-% ScanPC.red = uint16(RGB(:,1));
-% ScanPC.green = uint16(RGB(:,2));
-% ScanPC.blue = uint16(RGB(:,3));
+fprintf('\nColorize point cloud\n')
+RGB = colorCoding(PC_transf, ScanPC.gps_time, ScanBackup(1,1),...
+                  timeOffset, GNSS, Scan, rotScale, iDim, img, frameTimes);
+ScanPC.red = uint16(RGB(:,1));
+ScanPC.green = uint16(RGB(:,2));
+ScanPC.blue = uint16(RGB(:,3));
 
 %% Remove Moving Objects
 fprintf('\nRemove moving objects\n')
@@ -281,4 +285,4 @@ system(['.\functions\laszip.exe -i ' outputPath 'Pointcloud.las -o ' outputPath 
 
 filename = 'trajectory.kml';
 
-kmlwriteline([outputPath, filename], GPS_1(:,9), GPS_1(:,10), GPS_1(:,11), 'Description', 'Trajectory Created by Georeferencing.m', 'Name', 'Trajectory', 'AltitudeMode','clampToGround', 'Color', 'red', 'LineWidth', 3);
+kmlwriteline([outputPath, filename], GPS_1EH(:,1), GPS_1EH(:,2), GPS_1EH(:,3), 'Description', 'Trajectory Created by Georeferencing.m', 'Name', 'Trajectory', 'Color', 'red', 'LineWidth', 3);
