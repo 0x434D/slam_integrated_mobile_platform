@@ -92,9 +92,9 @@ rgb = [img(sub2ind(size(img), yImg, xImg, one*1, one*i))...
        img(sub2ind(size(img), yImg, xImg, one*3, one*i))];
 rgb = uint8(rgb);              % convert to uint8 for .las color
 
-% Set points outside the mask to purple (uncommon color) to change later
+% Set points outside the mask to black to change later
 in = mask(sub2ind(size(mask),yImg,xImg));
-rgb(~in,:) = repmat([120 0 255],[size(rgb(~in,:),1),1]);
+rgb(~in,:) = repmat([0 0 0],[size(rgb(~in,:),1),1]);
 
 % Add up detected point colors for all images
 pointColors(idxBounds(i):idxBounds(i+1),:) = [rgb in];
@@ -116,42 +116,8 @@ end
 %% Assign new color for points on image mask via spatial neighbourhood
 fprintf('\tAssign new color to occluded points\n')
 
-% % % old code so jogi can salvage the usefull parts
-% 
-% % Sort all points (and colors) by distance to first point
-% pointDist = vecnorm(pointCloud-pointCloud(1,1:3),2,2);
-% [~,dIDX] = sort(pointDist);
-% colorSort = pointColors(dIDX,1:4);
-% 
-% % List points for which new colors will be determined
-% change = find(pointColors(:,4) == 0);
-% 
-% % Get inverse index list of pointDist vector to find change points there
-% [~,dIDXinv] = sort(dIDX);
-% 
-% % Loop over all points
-% for p = 1:size(change,1)
-%     % Find the point in sorted color vector and check limits
-%     changeIDX = dIDXinv(change(p));
-%     if changeIDX+10 > size(colorSort,1)
-%         changeIDX = changeIDX - 10;
-%     elseif changeIDX-10 < 1
-%         changeIDX = 11;
-%     end
-%     
-%     % Get a pool of 21 neighbouring points to estimate a color
-%     pool = colorSort(changeIDX-10:changeIDX+10,1:4);
-%     if isempty(pool(pool(:,4) ~= 0,:))
-%         warning("Couldn't determine point colors from neighbouring points")
-%         pointColors(change(p),:) = [0 0 0 0];
-%     else
-%         pointColors(change(p),:) = uint8([round(mean(pool(pool(:,4) ~= 0,1:3))) 0]);
-%     end
-% end
-
-
-voxelLength = 0.5;
-
+% Set voxel parameters
+voxelLength = 1;        % [m]
 posMin = zeros(3,1);
 posMax = zeros(3,1);
 for i=1:3
@@ -159,24 +125,25 @@ for i=1:3
     posMax(i) =  ceil(max(pointCloud(:,i))/voxelLength)*voxelLength;
 end
 
-% edges for discretization
+% Edges for discretization
 edgesX = posMin(1):voxelLength:posMax(1);
 edgesY = posMin(2):voxelLength:posMax(2);
 edgesZ = posMin(3):voxelLength:posMax(3);
 
+% Discretization
 bins = zeros(size(pointCloud));
-% discretization
 bins(:,1) = discretize(pointCloud(:,1),edgesX);
 bins(:,2) = discretize(pointCloud(:,2),edgesY);
 bins(:,3) = discretize(pointCloud(:,3),edgesZ);
 
-% sort bins
+% Sort bins
 [bins, sortIdx] = sortrows(bins,[1 2 3]);
         
-% check all voxels
+% Check all voxels
 bin = zeros(1,3);
 idxA = 1;
 n = size(bins,1);
+noColor = 0;
 for i =  1:n
     idxE = i;
     if any(bin ~= bins(i,:))
@@ -184,11 +151,21 @@ for i =  1:n
         idxA = i;
     end
     if i == n || any(bins(i,:) ~= bins(i+1,:))
-        % DO STUFF HERE !
-        % points in voxel: sortIdx(idxA:idxE))
-
+        % Find points that need recoloring and assign new color
+        change = find(pointColors(sortIdx(idxA:idxE),4) == 0);
+        if ~isempty(change)
+            pool = pointColors(sortIdx(idxA:idxE),:);
+            if size(pool,1) == size(change,1)
+                 noColor = noColor + 1;
+            else 
+                for c = 1:size(change,1)
+                    pointColors(sortIdx(idxA + change(c) - 1),:) = uint8([round(mean(pool(pool(:,4) ~= 0,1:3),1)) 0]);
+                end
+            end
+        end
     end
 end
+fprintf('\t--> Total of %.0f points could not be colorized (now black)\n', noColor)
 
 %% Plot whole point cloud
 % f1 = figure;
