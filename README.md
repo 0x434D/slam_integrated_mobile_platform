@@ -10,13 +10,13 @@ This repository includes the processing code for data collected with the SIMP ve
  your_project_folder/
 	│
 	├── Code/  
-  │   ├── functions/  
-	│   ├── `Georeferencing.m` 
+        │   ├── functions/  
+	│   ├── Georeferencing.m 
 	└── Data/  
 	    ├── GNSS Trajectories/  
 	    ├── GoPro Images/  
-      │   └── GoProSchloss/  
-      ├── Scan Trajectories/  
+            │   └── GoProSchloss/  
+ 	    ├── Scan Trajectories/  
 	    ├── Scans/  
 	    └── output/  
 ```
