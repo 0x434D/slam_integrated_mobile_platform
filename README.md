@@ -1,7 +1,8 @@
 # SLAM Integrated Mobile Platform
 University project to integrate a laserscanner, GNSS antenna and remote controled vehicle in order to perform SLAM and georeference the results. 
 
-![SIMP Project](SIMPProject.png)
+![GitCover](https://user-images.githubusercontent.com/92944341/152424731-54061cfb-b6c4-4ac2-ab5a-4ca5c56b4e54.png)
+
 
 ## Overview
 This repository includes the processing code for data collected with the SIMP vehicle as well as some example data to run the program. Cloning the master branch will give you the following structure:
