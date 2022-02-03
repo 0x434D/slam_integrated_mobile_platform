@@ -1,4 +1,4 @@
-# Slam Integrated Mobile Platform
+# SLAM Integrated Mobile Platform
 University project to integrate a laserscanner, GNSS antenna and remote controled vehicle in order to perform SLAM and georeference the results. 
 
 ![SIMP Project](SIMPProject.png)
