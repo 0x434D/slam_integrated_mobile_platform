@@ -1,9 +1,12 @@
-function del = removeMovingObjects(xyz, t, voxelLength, timeDiff)
+function [del, mov] = removeMovingObjects(xyz, t, voxelLength, timeDiff)
 % -------------------------------------------------------------------------
 % removeMovingObjects  tells which point belong to moving objects
 %       if the points contained in a voxel have all been measured in a
 %       short period of time and never again, then there was probably some
 %       movement and the points can be deleted.
+%       also if a voxel contains only one point it is assumed that this
+%       point belongs either to a moving object or is a a measuring error.
+%       those points can probably be safely deleted.
 %       actual deletion has to be carried out by vector(del) = [], or
 %       matrix(del,:) = [];
 % -------------------------------------------------------------------------
@@ -15,7 +18,8 @@ function del = removeMovingObjects(xyz, t, voxelLength, timeDiff)
 %   gridLength : length of voxel grid
 %   timeDiff   : critical time difference
 % output:
-%   del       : boolean vector telling which points can be deleted
+%   del       : boolean vector telling which points are alone in their voxel
+%   mov       : boolean vector telling which points belong to moving objects
 % -------------------------------------------------------------------------
 
 % computes min and max values of x, y and z as multiple of voxelLength
@@ -47,6 +51,7 @@ t = t(sortIdx);
 bin = zeros(1,3);
 idxA = 1;
 n = size(bins,1);
+mov = false(n,1);
 del = false(n,1);
 for i =  1:n
 
@@ -56,14 +61,17 @@ for i =  1:n
     end
     if i == n || any(bins(i,:) ~= bins(i+1,:))
         idxE = i;
-        % no comparison possible with only one point per voxel
+        if idxE-idxA == 0
+            del(idxA) = true;
+        end
         if idxE-idxA > 0 && (max(t(idxA:idxE)) - min(t(idxA:idxE)) < timeDiff)
-            del(idxA:idxE) = true;
+            mov(idxA:idxE) = true;
         end
     end
 end
 
 [~,revSortIdx] = sort(sortIdx);
 del = del(revSortIdx);
+mov = mov(revSortIdx);
 
 end

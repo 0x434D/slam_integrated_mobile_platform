@@ -221,7 +221,9 @@ timeDiff = 5;
 % For 30% Pointcloud
 % voxelLength = 0.75;
 
-del = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
+[del, mov] = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
+
+ScanPC.classification = int8(mov)*2;
 
 ScanPC.intensity(del) = [];
 ScanPC.bits(del) = [];
@@ -249,7 +251,7 @@ fprintf('\nGround Classification\n')
 gridResolution = 1;
 ElevationThreshold = 0.2;
 
-ScanPC.classification = int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
+ScanPC.classification = ScanPC.classification + int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
