@@ -131,7 +131,7 @@ dmypy.json
 # Images
 *.jpg
 *.jpeg
-*.png
+.png
 *.tif
 *.tiff
 

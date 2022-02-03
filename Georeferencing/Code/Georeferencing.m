@@ -50,7 +50,7 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 
 % Load Scan Point Cloud Data
 fprintf('\tLoading point cloud\n')
-ScanPC = lasdata(string([ScanPCPathName, ScanPCFileName]), 'loadall');
+ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
 
 % Load image data
 fprintf('\tLoad image data\n')
