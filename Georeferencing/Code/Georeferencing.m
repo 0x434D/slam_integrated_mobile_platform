@@ -190,14 +190,13 @@ fprintf('Standard deviation (X,Y,Z): [%.3f %.3f %.3f] m\n',stdx,stdy,stdz)
 figure
 hold on
 grid on
-plot(1:length(match), match(:,5));
-plot(1:length(match), match(:,6));
-plot(1:length(match), match(:,7));
+plot(GNSS(:,1)-GNSS(1,1), match(:,5));
+plot(GNSS(:,1)-GNSS(1,1), match(:,6));
+plot(GNSS(:,1)-GNSS(1,1), match(:,7));
 legend('in X','in Y','in Z')
 title('Point match distance')
-xlabel('Time')
+xlabel('Time since start [s]')
 ylabel('Distance [m]')
-% print('-dpng','-r200',"Error_withoutLever.png")
 
 %% Transform Point Cloud
 fprintf('\nTransform point cloud\n')
