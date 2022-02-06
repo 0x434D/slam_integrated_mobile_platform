@@ -85,15 +85,6 @@ for t = 1:iter
                   [1 0 0; 0 cos(trafoParam(4)) -sin(trafoParam(4)); 0 sin(trafoParam(4)) cos(trafoParam(4))];          
     trans = trafoParam(7:9) + rotScaleNew*trans;
     rotS = rotScaleNew*rotS;
-
-%     % Plot trajectories
-%     pause(0.1)
-%     hold off
-%     plot3(GNSS(:,2),GNSS(:,3),GNSS(:,4),'b')
-%     hold on
-%     view([60 55])
-%     grid on
-%     plot3(Scan(:,2),Scan(:,3),Scan(:,4),'g')
     
     % Reset match
     match = [];
