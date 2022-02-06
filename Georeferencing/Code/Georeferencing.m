@@ -50,7 +50,7 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 
 % Load Scan Point Cloud Data
 fprintf('\tLoading point cloud\n')
-ScanPC = lasdata(string([ScanPCPathName, ScanPCFileName]), 'loadall');
+ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
 
 % Load image data
 fprintf('\tLoad image data\n')
@@ -190,14 +190,13 @@ fprintf('Standard deviation (X,Y,Z): [%.3f %.3f %.3f] m\n',stdx,stdy,stdz)
 figure
 hold on
 grid on
-plot(1:length(match), match(:,5));
-plot(1:length(match), match(:,6));
-plot(1:length(match), match(:,7));
+plot(GNSS(:,1)-GNSS(1,1), match(:,5));
+plot(GNSS(:,1)-GNSS(1,1), match(:,6));
+plot(GNSS(:,1)-GNSS(1,1), match(:,7));
 legend('in X','in Y','in Z')
 title('Point match distance')
-xlabel('Time')
+xlabel('Time since start [s]')
 ylabel('Distance [m]')
-% print('-dpng','-r200',"Error_withoutLever.png")
 
 %% Transform Point Cloud
 fprintf('\nTransform point cloud\n')
@@ -221,7 +220,9 @@ timeDiff = 5;
 % For 30% Pointcloud
 % voxelLength = 0.75;
 
-del = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
+[del, mov] = removeMovingObjects(PC_transf, ScanPC.gps_time, voxelLength, timeDiff);
+
+ScanPC.classification = int8(mov)*2;
 
 ScanPC.intensity(del) = [];
 ScanPC.bits(del) = [];
@@ -249,7 +250,7 @@ fprintf('\nGround Classification\n')
 gridResolution = 1;
 ElevationThreshold = 0.2;
 
-ScanPC.classification = int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
+ScanPC.classification = ScanPC.classification + int8(segmentGroundSMRF(pointCloud([ScanPC.x, ScanPC.y, ScanPC.z]), gridResolution, 'ElevationThreshold', ElevationThreshold));
 
 %% Save final cloud
 fprintf('\nSave final cloud\n')
