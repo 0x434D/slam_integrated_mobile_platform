@@ -50,7 +50,15 @@ Scan(:,1) = Scan(:,1)-Scan(1,1);
 
 % Load Scan Point Cloud Data
 fprintf('\tLoading point cloud\n')
-ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
+if ScanPCFileName(end) == 'z'           % convert .laz to .las
+    lazfile = [ScanPCPathName, ScanPCFileName];
+    lasfile = [lazfile '_tmp.las'];
+    system(horzcat('functions\laszip -i ','"',lazfile,'"',' -o ','"',lasfile,'"'));
+    ScanPC = lasdata(lasfile, 'loadall');
+    delete(sprintf('%s',lasfile))
+else
+    ScanPC = lasdata([ScanPCPathName, ScanPCFileName], 'loadall');
+end
 
 % Load image data
 fprintf('\tLoad image data\n')
