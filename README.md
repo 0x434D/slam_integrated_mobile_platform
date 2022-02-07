@@ -5,7 +5,7 @@ University project to integrate a laserscanner, GNSS antenna and remote controle
 
 
 ## Overview
-This repository includes the processing code for data collected with the SIMP vehicle as well as some example data to run the program. Cloning the master branch will give you the following structure:
+This repository includes the processing code for data collected with the SIMP vehicle as well as some example data to run the program. The project is structured as follows:
 
 ```
  your_project_folder/
@@ -25,10 +25,10 @@ This repository includes the processing code for data collected with the SIMP ve
 ## How to use
 The Georeferencing function includes the main code that will be used to call all functions related with this project. To process the example data simply run `Georeferencing.m` and select the corresponding data when prompted. 
 
-The data can be downloaded from Google-Drive via this link (~ 2GB):
+The data can be downloaded from Google-Drive via this link (~ 2GB): <br />
 https://drive.google.com/drive/folders/1lvRP46lA1Gb7gnMfUR8oFm5_vJhGkE-_?usp=sharing
 
-Simply download the SIMP Data folder and integrate the structure into `your_project_folder/Data/`
+Simply download "SIMP Data" and integrate the folders into `your_project_folder/Data/` to match the abovementioned project structure.
 
 The following MATLAB Add-Ons need to be installed:
 - Aerospace Toolbox (by MathWorks)
