@@ -45,4 +45,4 @@ The main steps of the program are:
 - Ground classification (to seperate the points by ground and get some semantic information)
 - Save final cloud (in Earth-Centered-Earth-Fixed (ECEF) coordinates)
 
-
+PLEASE NOTE: This repository also includes the data for processing the code (i.e. trajectories, pointclouds and images) and is therefore rather large (around 2 GB of storage will be used).
