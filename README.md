@@ -24,6 +24,12 @@ This repository includes the processing code for data collected with the SIMP ve
 
 The Georeferencing function includes the main code that will be used to call all functions related with this project. To process the example data simply run `Georeferencing.m` and select the corresponding data when prompted. 
 
+The following Add-Ons need to be installed:
+- Computer Vision Toolbox (by MathWorks)
+- Lidar Toolbox (by MathWorks)
+- Image Processing Toolbox (by MathWorks)
+- lasdata (by Teemu Kumpumäki)
+
 The main steps of the program are:
 - Loading all necessary data (see Data folder)
 - Calculating Time Offset (to connect Scan and GNSS data)
@@ -35,4 +41,5 @@ The main steps of the program are:
 - Remove moving objects (to clean up the point cloud)
 - Ground classification (to seperate the points by ground and get some semantic information)
 - Save final cloud (in Earth-Centered-Earth-Fixed (ECEF) coordinates)
+
 
