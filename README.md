@@ -39,6 +39,8 @@ The following MATLAB Add-Ons need to be installed:
 - Image Processing Toolbox (by MathWorks)
 - lasdata (by Teemu Kumpumäki)
 
+After successfully running the code, the output pointcloud and trajectory can be found in `your_project_folder/Data/output/`
+
 ## Processing code summary
 The main steps of the program are:
 - Loading all necessary data (see Data folder)
