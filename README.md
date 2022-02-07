@@ -22,9 +22,15 @@ This repository includes the processing code for data collected with the SIMP ve
 	    └── output/  
 ```
 
+## How to use
 The Georeferencing function includes the main code that will be used to call all functions related with this project. To process the example data simply run `Georeferencing.m` and select the corresponding data when prompted. 
 
-The following Add-Ons need to be installed:
+The data can be downloaded from Google-Drive via this link (~ 2GB):
+https://drive.google.com/drive/folders/1lvRP46lA1Gb7gnMfUR8oFm5_vJhGkE-_?usp=sharing
+
+Simply download the SIMP Data folder and integrate the structure into `your_project_folder/Data/`
+
+The following MATLAB Add-Ons need to be installed:
 - Aerospace Toolbox (by MathWorks)
 - Mapping Toolbox (by MathWorks)
 - Signal Processing Toolbox (by MathWorks)
@@ -33,6 +39,7 @@ The following Add-Ons need to be installed:
 - Image Processing Toolbox (by MathWorks)
 - lasdata (by Teemu Kumpumäki)
 
+## Processing code summary
 The main steps of the program are:
 - Loading all necessary data (see Data folder)
 - Calculating Time Offset (to connect Scan and GNSS data)
@@ -44,5 +51,3 @@ The main steps of the program are:
 - Remove moving objects (to clean up the point cloud)
 - Ground classification (to seperate the points by ground and get some semantic information)
 - Save final cloud (in Earth-Centered-Earth-Fixed (ECEF) coordinates)
-
-PLEASE NOTE: This repository also includes the data for processing the code (i.e. trajectories, pointclouds and images) and is therefore rather large (around 2 GB of storage will be used).
