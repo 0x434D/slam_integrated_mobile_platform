@@ -41,6 +41,8 @@ The following MATLAB Add-Ons need to be installed:
 
 After successfully running the code, the output pointcloud and trajectory can be found in `your_project_folder/Data/output/`
 
+For a web-based visualizer of our results, visit https://ifpwww.ifp.uni-stuttgart.de/philipp/SIMP/ or go to https://github.com/tjkayser/SIMP-Viewer to access the viewer code files.
+
 ## Processing code summary
 The main steps of the program are:
 - Loading all necessary data (see Data folder)
