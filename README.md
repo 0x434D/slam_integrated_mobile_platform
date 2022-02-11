@@ -55,3 +55,6 @@ The main steps of the program are:
 - Remove moving objects (to clean up the point cloud)
 - Ground classification (to seperate the points by ground and get some semantic information)
 - Save final cloud (in Earth-Centered-Earth-Fixed (ECEF) coordinates)
+
+The presentation slides of the project can be found here: <br />
+https://docs.google.com/presentation/d/1rTlY-6AHuGG7iMSqez656pDZ-7JLuCv1/edit?usp=sharing&ouid=113886872871499490206&rtpof=true&sd=true
